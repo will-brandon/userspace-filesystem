@@ -31,4 +31,3 @@ gdb: nufs
 	gdb --args ./nufs -s -f mnt data.nufs
 
 .PHONY: clean mount unmount gdb
-
