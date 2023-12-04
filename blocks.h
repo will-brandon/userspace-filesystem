@@ -11,13 +11,6 @@
 
 #include <stdio.h>
 
-#define BLOCK_COUNT 256 // we split the "disk" into 256 blocks
-#define BLOCK_SIZE 4096 // = 4K
-#define NUFS_SIZE (BLOCK_SIZE * BLOCK_COUNT) // = 1MB
-
-#define BLOCK_BITMAP_SIZE (BLOCK_COUNT / 8)
-// Note: assumes block count is divisible by 8
-
 /** 
  * Compute the number of blocks needed to store the given number of bytes.
  *

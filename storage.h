@@ -1,8 +1,9 @@
-// Disk storage abstracttion.
 //
-// Feel free to use as inspiration. Provided as-is.
-
-// based on cs3650 starter code
+//
+//
+//
+//
+//
 
 #ifndef NUFS_STORAGE_H
 #define NUFS_STORAGE_H
@@ -14,7 +15,7 @@
 
 #include "slist.h"
 
-int storage_block_for_path(const char *path);
+int inode_for_path(const char *path);
 
 void storage_init(const char *path);
 void storage_deinit(void);

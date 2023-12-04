@@ -12,7 +12,7 @@ void print_inode(inode_t *node)
 
 inode_t *get_inode(int inum)
 {
-
+    
 }
 
 int alloc_inode(void)

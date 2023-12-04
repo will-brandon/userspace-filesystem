@@ -17,6 +17,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "specs.h"
 #include "bitmap.h"
 #include "blocks.h"
 

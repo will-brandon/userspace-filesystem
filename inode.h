@@ -10,11 +10,11 @@
 
 typedef struct inode
 {
-  int refs;  // reference count
-  int mode;  // permission & type
-  int size;  // bytes
+  int refs;     // reference count (we will leave this at 1)
+  int mode;     // permission & type
+  int size;     // bytes
   int block[4]; // 0 if unused, >0 if points to a block
-  int next; // -1 if no other inode, otherwise index of next inode within inode block
+  int next;     // -1 if no other inode, otherwise index of next inode within inode block
 } inode_t;
 
 void print_inode(inode_t *node);

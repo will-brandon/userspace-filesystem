@@ -2,7 +2,7 @@
 #include "blocks.h"
 #include "slist.h"
 
-int storage_block_for_path(const char *path)
+int inode_for_path(const char *path)
 {
     
 }
