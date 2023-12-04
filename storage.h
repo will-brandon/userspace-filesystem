@@ -1,8 +1,9 @@
 //
-//
-//
-//
-//
+// MODEL:
+// ===========================================================
+//   block bitmap  |  inode bitmap  |  inode structs  |
+// ===========================================================
+//  32B (256 bits)   32B (256 bits)   256
 //
 
 #ifndef NUFS_STORAGE_H
@@ -14,8 +15,6 @@
 #include <unistd.h>
 
 #include "slist.h"
-
-int inode_for_path(const char *path);
 
 void storage_init(const char *path);
 void storage_deinit(void);

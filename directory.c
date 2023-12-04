@@ -1,6 +1,6 @@
 #include "directory.h"
 
-void directory_init()
+void directory_init(void)
 {
 
 }

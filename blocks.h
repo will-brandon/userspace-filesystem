@@ -30,7 +30,7 @@ void blocks_init(const char *image_path);
 /**
  * Close the disk image.
  */
-void blocks_free();
+void blocks_free(void);
 
 /**
  * Get the block with the given index, returning a pointer to its start.
@@ -46,14 +46,18 @@ void *blocks_get_block(int bnum);
  *
  * @return A pointer to the beginning of the free blocks bitmap.
  */
-void *get_blocks_bitmap();
+void *get_blocks_bitmap(void);
 
 /**
  * Return a pointer to the beginning of the inode table bitmap.
  *
  * @return A pointer to the beginning of the free inode bitmap.
  */
-void *get_inode_bitmap();
+void *get_inode_bitmap(void);
+
+void *get_inode_start(void);
+
+void *get_content_start(void);
 
 /**
  * Allocate a new block and return its number.
@@ -62,7 +66,7 @@ void *get_inode_bitmap();
  *
  * @return The index of the newly allocated block.
  */
-int alloc_block();
+int alloc_block(void);
 
 /**
  * Deallocate the block with the given number.

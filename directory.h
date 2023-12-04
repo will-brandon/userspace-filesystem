@@ -19,7 +19,7 @@ typedef struct dirent {
   char _reserved[12];
 } dirent_t;
 
-void directory_init();
+void directory_init(void);
 int directory_lookup(inode_t *di, const char *name);
 int directory_put(inode_t *di, const char *name, int inum);
 int directory_delete(inode_t *di, const char *name);

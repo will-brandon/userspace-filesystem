@@ -8,6 +8,7 @@
 
 #include "blocks.h"
 
+// Total of 32 bytes
 typedef struct inode
 {
   int refs;     // reference count (we will leave this at 1)
