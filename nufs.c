@@ -112,6 +112,7 @@ int nufs_mkdir(const char *path, mode_t mode)
   return rv;
 }
 
+// UNLINK BECOMES DELETE
 int nufs_unlink(const char *path)
 {
   int rv = -1;

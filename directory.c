@@ -10,6 +10,7 @@ int directory_lookup(inode_t *di, const char *name)
 
 }
 
+// Check for same name existing
 int directory_put(inode_t *di, const char *name, int inum)
 {
 

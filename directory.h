@@ -15,7 +15,7 @@
 // MAKE SURE THAT . AND MAYBE EVEN .. ARE THE FIRST TWO ENTRIES
 typedef struct dirent {
   char name[DIR_NAME_LENGTH];
-  int inum;
+  int inum; // Make -1 if unused
   char _reserved[12];
 } dirent_t;
 
