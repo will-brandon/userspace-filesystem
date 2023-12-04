@@ -14,6 +14,8 @@
 
 #include "slist.h"
 
+int storage_block_for_path(const char *path);
+
 void storage_init(const char *path);
 void storage_deinit(void);
 int storage_stat(const char *path, struct stat *st);

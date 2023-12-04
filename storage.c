@@ -1,6 +1,11 @@
 #include "storage.h"
 #include "blocks.h"
-#include <stdio.h>
+#include "slist.h"
+
+int storage_block_for_path(const char *path)
+{
+    
+}
 
 void storage_init(const char *path)
 {

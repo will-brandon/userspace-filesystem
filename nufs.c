@@ -20,8 +20,9 @@
 int nufs_access(const char *path, int mask)
 {
   int rv = 0;
-
+  // F_OK, R_OK, W_OK, and X_OK
   // Only the root directory and our simulated file are accessible for now...
+  
   if (strcmp(path, "/") == 0 || strcmp(path, "/hello.txt") == 0)
   {
     rv = 0;
