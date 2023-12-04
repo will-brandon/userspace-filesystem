@@ -70,7 +70,7 @@ void blocks_free(void)
 // Get the given block, returning a pointer to its start.
 void *blocks_get_block(int bnum)
 {
-  return blocks_base + BLOCK_SIZE * bnum;
+  return blocks_base + (BLOCK_SIZE * bnum);
 }
 
 // Return a pointer to the beginning of the block bitmap.
