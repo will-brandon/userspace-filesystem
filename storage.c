@@ -1,9 +1,14 @@
 #include "storage.h"
 #include "blocks.h"
+#include <stdio.h>
 
 void storage_init(const char *path)
 {
-    blocks_init("Hello.txt");
+    blocks_init(path);
+}
+
+void storage_deinit(void)
+{
     blocks_free();
 }
 

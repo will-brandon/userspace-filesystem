@@ -230,8 +230,11 @@ struct fuse_operations nufs_ops;
 int main(int argc, char *argv[])
 {
   assert(argc > 2 && argc < 6);
-  printf("TODO: mount %s as data file\n", argv[--argc]);
+  
   storage_init(argv[--argc]);
   nufs_init_ops(&nufs_ops);
-  return fuse_main(argc, argv, &nufs_ops, NULL);
+  int fuse_exit_code = fuse_main(argc, argv, &nufs_ops, NULL);
+  storage_deinit();
+
+  return fuse_exit_code;
 }
