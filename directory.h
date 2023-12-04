@@ -3,8 +3,8 @@
 // Feel free to use as inspiration. Provided as-is.
 
 // Based on cs3650 starter code
-#ifndef DIRECTORY_H
-#define DIRECTORY_H
+#ifndef _DIRECTORY_H
+#define _DIRECTORY_H
 
 #define DIR_NAME_LENGTH 48
 

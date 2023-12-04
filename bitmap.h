@@ -4,8 +4,8 @@
  *
  * A bitmap interface.
  */
-#ifndef BITMAP_H
-#define BITMAP_H
+#ifndef _BITMAP_H
+#define _BITMAP_H
 
 /**
  * Get the given bit from the bitmap.

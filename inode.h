@@ -1,12 +1,7 @@
 // Inode manipulation routines.
-//
-// Feel free to use as inspiration. Provided as-is.
 
-// based on cs3650 starter code
-#ifndef INODE_H
-#define INODE_H
-
-#include "blocks.h"
+#ifndef _INODE_H
+#define _INODE_H
 
 // Total of 32 bytes
 typedef struct inode

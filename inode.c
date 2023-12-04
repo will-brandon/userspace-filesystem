@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include "specs.h"
+#include "bitmap.h"
+#include "blocks.h"
 #include "inode.h"
 
 void print_inode(inode_t *node)
@@ -12,7 +15,14 @@ void print_inode(inode_t *node)
 
 inode_t *get_inode(int inum)
 {
-    
+    // Ensure the inum is in range and actually exists.
+    if (inum >= MAX_INODE_COUNT || !bitmap_get(get_inode_bitmap(), inum))
+    {
+        return NULL;
+    }
+
+    // Return the proper inode at the given offset.
+    return get_inode_start() + (sizeof(inode_t) * inum);
 }
 
 int alloc_inode(void)

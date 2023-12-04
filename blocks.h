@@ -6,8 +6,8 @@
  *
  * The disk image is mmapped, so block data is accessed using pointers.
  */
-#ifndef BLOCKS_H
-#define BLOCKS_H
+#ifndef _BLOCKS_H
+#define _BLOCKS_H
 
 #include <stdio.h>
 

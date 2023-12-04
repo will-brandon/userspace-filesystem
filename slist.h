@@ -6,8 +6,8 @@
  *
  * This might be useful for directory listings and for manipulating paths.
  */
-#ifndef SLIST_H
-#define SLIST_H
+#ifndef _SLIST_H
+#define _SLIST_H
 
 typedef struct slist {
   char *data;

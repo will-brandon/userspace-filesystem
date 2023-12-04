@@ -1,13 +1,6 @@
-//
-// MODEL:
-// ===========================================================
-//   block bitmap  |  inode bitmap  |  inode structs  |
-// ===========================================================
-//  32B (256 bits)   32B (256 bits)   256
-//
 
-#ifndef NUFS_STORAGE_H
-#define NUFS_STORAGE_H
+#ifndef _STORAGE_H
+#define _STORAGE_H
 
 #include <sys/stat.h>
 #include <sys/types.h>
