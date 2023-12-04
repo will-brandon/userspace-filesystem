@@ -12,6 +12,7 @@
 #include "inode.h"
 #include "slist.h"
 
+// MAKE SURE THAT . AND MAYBE EVEN .. ARE THE FIRST TWO ENTRIES
 typedef struct dirent {
   char name[DIR_NAME_LENGTH];
   int inum;

@@ -13,6 +13,8 @@
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
 
+#include "storage.h"
+
 // implementation for: man 2 access
 // Checks if a file exists.
 int nufs_access(const char *path, int mask)
@@ -229,7 +231,7 @@ int main(int argc, char *argv[])
 {
   assert(argc > 2 && argc < 6);
   printf("TODO: mount %s as data file\n", argv[--argc]);
-  // storage_init(argv[--argc]);
+  storage_init(argv[--argc]);
   nufs_init_ops(&nufs_ops);
   return fuse_main(argc, argv, &nufs_ops, NULL);
 }
