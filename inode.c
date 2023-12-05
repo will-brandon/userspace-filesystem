@@ -2,11 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include "util.h"
 #include "specs.h"
 #include "bitmap.h"
 #include "blocks.h"
 #include "inode.h"
+#include "util.h"
 
 void print_inode(inode_t *nodep)
 {
@@ -88,6 +88,7 @@ int free_inode(int inum)
     bitmap_put(get_inode_bitmap(), inum, 0);
 }
 
+
 int grow_inode(inode_t *nodep, int size)
 {
     assert(nodep);
@@ -104,6 +105,7 @@ int grow_inode(inode_t *nodep, int size)
     // If no new blocks are needed, simply increment the inode's size counter and return this size.
     if (new_block_count == 0)
     {
+        printf("ADDING (1): %d\n", size);
         nodep->size += size;
         return size;
     }
@@ -124,10 +126,12 @@ int grow_inode(inode_t *nodep, int size)
             return -1;
         }
 
-        nodep->size += MIN(BLOCK_SIZE, size);
+        printf("ADDING (2): %d\n", MIN(BLOCK_SIZE, size));
+        nodep->size += MIN(0, size - BLOCK_SIZE);
         return size;
     }
 
+    // If the next child inode doesn't exist, create it since we know we need one.
     if (nodep->next < 0)
     {
         if ((nodep->next = alloc_inode()) < 0)
@@ -136,6 +140,7 @@ int grow_inode(inode_t *nodep, int size)
         }
     }
 
+    // Recursively perform the growth in this child inode.
     if (grow_inode(get_inode(nodep->next), size) < 0)
     {
         return -1;
@@ -143,6 +148,7 @@ int grow_inode(inode_t *nodep, int size)
 
     // Since we have ensured there is space, increment the inode's size counter and return this
     // size.
+    printf("ADDING (3): %d\n", size);
     nodep->size += size;
     return size;
 }
