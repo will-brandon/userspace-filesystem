@@ -8,6 +8,8 @@
 
 void print_inode(inode_t *nodep)
 {
+    assert(nodep);
+    
     printf(
         "INODE(r=%d, m=%o, s=%d, b={%d, %d, %d, %d}, n=%d)\n",
         nodep->refs, nodep->mode, nodep->size,
@@ -17,11 +19,8 @@ void print_inode(inode_t *nodep)
 
 inode_t *get_inode(int inum)
 {
-    // Ensure the inum is in range and actually exists.
-    if (inum >= MAX_INODE_COUNT || !bitmap_get(get_inode_bitmap(), inum))
-    {
-        return NULL;
-    }
+    assert(inum < MAX_INODE_COUNT);
+    assert(bitmap_get(get_inode_bitmap(), inum));
 
     // Return the proper inode at the given offset.
     return get_inode_start() + (sizeof(inode_t) * inum);
@@ -29,11 +28,56 @@ inode_t *get_inode(int inum)
 
 void clear_inode(inode_t *nodep)
 {
+    assert(nodep);
+
     nodep->refs = 0;
     nodep->mode = 0100644;
     nodep->size = 0;
-    memset(nodep->blocks, -1, sizeof(int) * INODE_BLOCK_COUNT);
+    memset(nodep->blocks, -1, sizeof(int) * INODE_LOCAL_BLOCK_CAP);
     nodep->next = -1;
+}
+
+int inode_block_count(inode_t *nodep)
+{
+    assert(nodep);
+
+    // Begin a count.
+    int count = 0;
+
+    // Check how many local blocks there are.
+    for (int i = 0; i < INODE_LOCAL_BLOCK_CAP; i++)
+    {
+        if (nodep->blocks[i] >= 0)
+        {
+            count++;
+        }
+    }
+
+    // If there is no next block, simply return the local count.
+    if (nodep->next < 0)
+    {
+        return count;
+    }
+
+    // Since a next block exists, return the local count plus the count of the next block.
+    return count + inode_block_count(get_inode(nodep->next));
+}
+
+int inode_available_block(inode_t *nodep)
+{
+    assert(nodep);
+
+    // Find the index of the first available block in the range [0, INODE_BLOCK_COUNT).
+    for (int i = 0; i < INODE_LOCAL_BLOCK_CAP; i++)
+    {
+        if (nodep->blocks[i] < 0)
+        {
+            return i;
+        }
+    }
+
+    // If no blocks are available return -1.
+    return -1;
 }
 
 int alloc_inode(void)
@@ -55,17 +99,14 @@ int alloc_inode(void)
         }
     }
 
-    // Return -1 if no more inodes can be allocated because the maximum amount has been reached.
+    // Return -1 indicating that there is no space to store more inodes.
     return -1;
 }
 
 int free_inode(int inum)
 {
-    // Ensure the inum is in range and was actually in use.
-    if (inum >= MAX_INODE_COUNT || !bitmap_get(get_inode_bitmap(), inum))
-    {
-        return -1;
-    }
+    assert(inum < MAX_INODE_COUNT);
+    assert(bitmap_get(get_inode_bitmap(), inum));
 
     // Set the inode to unused.
     bitmap_put(get_inode_bitmap(), inum, 0);
@@ -73,7 +114,31 @@ int free_inode(int inum)
 
 int grow_inode(inode_t *nodep, int size)
 {
+    assert(nodep);
 
+    // If a size of less than 1 is given return 0 and do nothing. This is a recursive base case.
+    if (size < 1)
+    {
+        return 0;
+    }
+
+    int new_block_count = bytes_to_blocks(nodep->size + size);
+    int available_block = inode_available_block(nodep);
+
+    if (available_block >= 0)
+    {
+
+    }
+
+    if (available_block < 0)
+    {
+        if (nodep->next < 0 && (nodep->next = alloc_inode()) < 0)
+        {
+            return -1;
+        }
+
+
+    }
 }
 
 int shrink_inode(inode_t *nodep, int size)
