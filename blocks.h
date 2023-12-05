@@ -33,6 +33,11 @@ void blocks_init(const char *image_path);
 void blocks_free(void);
 
 /**
+ * Disk destroyer. :)
+ */
+void blocks_clear(void);
+
+/**
  * Get the block with the given index, returning a pointer to its start.
  *
  * @param bnum Block number (index).

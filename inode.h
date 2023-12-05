@@ -9,6 +9,9 @@
 // inode should be total of 32 bytes
 #define INODE_LOCAL_BLOCK_CAP 4
 
+// Note that inodes form a tree. If an inode is the child of another inode, its size will likely be
+// innacurate since the size of a subnode is not useful information to the algorithms that manage
+// these nodes.
 typedef struct inode
 {
   int refs;                          // reference count (we will leave this at 1)

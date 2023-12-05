@@ -1,6 +1,8 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
+#include "util.h"
 #include "specs.h"
 #include "bitmap.h"
 #include "blocks.h"
@@ -106,8 +108,10 @@ int grow_inode(inode_t *nodep, int size)
         return size;
     }
 
+    // Try to find an available slot in the current local blocks list.
     int available_slot = inode_local_available_block_slot(nodep);
 
+    // If a local slot exists create the 
     if (available_slot >= 0)
     {
         if ((nodep->blocks[available_slot] = alloc_block()) < 0)
@@ -120,7 +124,7 @@ int grow_inode(inode_t *nodep, int size)
             return -1;
         }
 
-        nodep->size += size;
+        nodep->size += MIN(BLOCK_SIZE, size);
         return size;
     }
 
@@ -132,7 +136,7 @@ int grow_inode(inode_t *nodep, int size)
         }
     }
 
-    if (grow_inode(nodep->next, size) < 0)
+    if (grow_inode(get_inode(nodep->next), size) < 0)
     {
         return -1;
     }
@@ -145,7 +149,7 @@ int grow_inode(inode_t *nodep, int size)
 
 int shrink_inode(inode_t *nodep, int size)
 {
-
+    assert(nodep);
 }
 
 int inode_get_bnum(inode_t *nodep, int file_bnum)

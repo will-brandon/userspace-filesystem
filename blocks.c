@@ -67,6 +67,11 @@ void blocks_free(void)
   assert(rv == 0);
 }
 
+void blocks_clear(void)
+{
+  memset(blocks_base, 0, NUFS_SIZE);
+}
+
 // Get the given block, returning a pointer to its start.
 void *blocks_get_block(int bnum)
 {
