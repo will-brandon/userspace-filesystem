@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "util.h"
 #include "specs.h"
 #include "storage.h"
@@ -7,13 +8,29 @@
 #include "slist.h"
 #include "bitmap.h"
 
+static inode_t *root_nodep;
+
 int inode_for_path(const char *path)
 {
 }
 
 void storage_init(const char *path)
 {
+  assert(path);
+
+  // Create a memory map and initialize the disk blocks and.
   blocks_init(path);
+
+  // Allocate the root inode and make it a directory if it doesn't already exist. Note that this
+  // relies on ROOT_INUM being 0. Otherwise, there is no guarantee ROOT_INUM will be allocated.
+  if (!bitmap_get(get_inode_bitmap(), ROOT_INUM))
+  {
+    assert(alloc_inode() == ROOT_INUM);
+    directory_init(ROOT_INUM);
+  }
+
+  // Initialize a pointer to the root node structure.
+  root_nodep = get_inode(ROOT_INUM);
 
   blocks_clear();
 
@@ -51,6 +68,7 @@ void storage_init(const char *path)
 
 void storage_deinit(void)
 {
+  // Persist the blocks in the memory map to disk .
   blocks_free();
 }
 

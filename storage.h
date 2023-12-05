@@ -6,8 +6,9 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-
 #include "slist.h"
+
+#define ROOT_INUM 0
 
 void storage_init(const char *path);
 void storage_deinit(void);
