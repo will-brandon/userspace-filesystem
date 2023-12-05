@@ -21,8 +21,7 @@ typedef struct inode
 void print_inode(inode_t *nodep);
 inode_t *get_inode(int inum);
 void clear_inode(inode_t *nodep);
-int inode_block_count(inode_t *nodep);
-int inode_available_block(inode_t *nodep);
+int inode_local_available_block_slot(inode_t *nodep);
 int alloc_inode(void);
 int free_inode(int inum);
 int grow_inode(inode_t *nodep, int size);

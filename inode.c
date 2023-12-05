@@ -37,33 +37,7 @@ void clear_inode(inode_t *nodep)
     nodep->next = -1;
 }
 
-int inode_block_count(inode_t *nodep)
-{
-    assert(nodep);
-
-    // Begin a count.
-    int count = 0;
-
-    // Check how many local blocks there are.
-    for (int i = 0; i < INODE_LOCAL_BLOCK_CAP; i++)
-    {
-        if (nodep->blocks[i] >= 0)
-        {
-            count++;
-        }
-    }
-
-    // If there is no next block, simply return the local count.
-    if (nodep->next < 0)
-    {
-        return count;
-    }
-
-    // Since a next block exists, return the local count plus the count of the next block.
-    return count + inode_block_count(get_inode(nodep->next));
-}
-
-int inode_available_block(inode_t *nodep)
+int inode_local_available_block_slot(inode_t *nodep)
 {
     assert(nodep);
 
@@ -121,8 +95,10 @@ int grow_inode(inode_t *nodep, int size)
     {
         return 0;
     }
+    
+    // Calculate the number of additional blocks that will be needed.
+    int new_block_count = bytes_to_blocks(nodep->size + size) - bytes_to_blocks(nodep->size);
 
-    int new_block_count = bytes_to_blocks(nodep->size + size);
     int available_block = inode_available_block(nodep);
 
     if (available_block >= 0)
@@ -139,6 +115,11 @@ int grow_inode(inode_t *nodep, int size)
 
 
     }
+
+    // Since we have ensured there is space, increment the inode's size counter and return this
+    // size.
+    nodep->size += size;
+    return size;
 }
 
 int shrink_inode(inode_t *nodep, int size)
