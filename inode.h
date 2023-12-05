@@ -8,6 +8,7 @@
 
 // inode should be total of 32 bytes
 #define INODE_LOCAL_BLOCK_CAP 4
+#define INODE_MAX_LOCAL_SIZE BLOCK_SIZE * INODE_LOCAL_BLOCK_CAP
 
 // Note that inodes form a tree. If an inode is the child of another inode, its size will likely be
 // innacurate since the size of a subnode is not useful information to the algorithms that manage
@@ -24,7 +25,8 @@ typedef struct inode
 void print_inode(inode_t *nodep);
 inode_t *get_inode(int inum);
 void clear_inode(inode_t *nodep);
-int inode_local_available_block_slot(inode_t *nodep);
+int inode_total_size(inode_t *nodep);
+inode_t *inode_last_child(inode_t *nodep);
 int alloc_inode(void);
 int free_inode(int inum);
 int grow_inode(inode_t *nodep, int size);

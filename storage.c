@@ -21,12 +21,12 @@ void storage_init(const char *path)
     inode_t *nodep = get_inode(inum);
     print_inode(nodep);
 
-    for (int i = 0; i < BLOCK_SIZE * 3; i++)
-    {
-        grow_inode(nodep, 1);
-    }
+    //for (int i = 0; i < BLOCK_SIZE * 3; i++)
+    //{
+    //    grow_inode(nodep, 1);
+    //}
 
-    print_inode(nodep);
+    //print_inode(nodep);
     //print_inode(get_inode(1));
     //print_inode(get_inode(2));
 }
