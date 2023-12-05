@@ -8,6 +8,7 @@
 
 #define DIR_NAME_LENGTH 60
 
+#include "util.h"
 #include "blocks.h"
 #include "inode.h"
 #include "slist.h"
@@ -28,6 +29,6 @@ int directory_lookup_path(inode_t *nodep, const char *path);
 int directory_put(inode_t *nodep, const char *name, int inum);
 int directory_delete(inode_t *nodep, const char *name);
 slist_t *directory_list(const char *path);
-void print_directory(inode_t *nodep);
+void print_directory(inode_t *nodep, bool_t include_empty_entries);
 
 #endif

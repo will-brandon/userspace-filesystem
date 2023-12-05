@@ -122,7 +122,7 @@ int alloc_block(void)
     }
   }
 
-  return -1;
+  return -ENOSPC;
 }
 
 // Deallocate the block with the given index.

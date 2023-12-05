@@ -8,4 +8,10 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
+#define TRUE  1
+#define FALSE 0
+
+typedef unsigned char byte_t;
+typedef char bool_t;
+
 #endif

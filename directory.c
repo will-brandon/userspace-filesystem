@@ -1,6 +1,6 @@
+#include <errno.h>
 #include <assert.h>
 #include <string.h>
-#include "util.h"
 #include "specs.h"
 #include "bitmap.h"
 #include "inode.h"
@@ -104,6 +104,12 @@ int directory_put(inode_t *nodep, const char *name, int inum)
   {
     entryp = directory_get(nodep, i);
 
+    // Indicate that a file with the given name already exists.
+    if (!strcmp(name, entryp->name))
+    {
+      return -EEXIST;
+    }
+
     if (entryp->inum < 0)
     {
       directory_rename(entryp, name);
@@ -113,18 +119,20 @@ int directory_put(inode_t *nodep, const char *name, int inum)
     }
   }
 
-  
-
-  // Since no open entry exists, create a new one and grow the inode. If the inode returns -1
-  // indicating that the disk is full, return -1 immediately.
+  // Since no open entry exists, create a new one and grow the inode. If the inode returns -ENOSPC
+  // indicating that the disk is full, return -ENOSPC immediately.
   if (grow_inode(nodep, sizeof(dirent_t)) < 0)
   {
-    return -1;
+    return -ENOSPC;
   }
 
+  // Insert the proper data into the entry.
   entryp = directory_get(nodep, entry_count);
   directory_rename(entryp, name);
   entryp->inum = inum;
+
+  // Return the directory entry index.
+  return entry_count;
 }
 
 int directory_delete(inode_t *nodep, const char *name)
@@ -132,6 +140,8 @@ int directory_delete(inode_t *nodep, const char *name)
   assert(nodep);
   assert(nodep->mode & INODE_DIR);
   assert(name);
+
+
 }
 
 slist_t *directory_list(const char *path)
@@ -139,7 +149,7 @@ slist_t *directory_list(const char *path)
   assert(path);
 }
 
-void print_directory(inode_t *nodep)
+void print_directory(inode_t *nodep, bool_t include_empty_entries)
 {
   assert(nodep);
   assert(nodep->mode & INODE_DIR);
@@ -152,6 +162,9 @@ void print_directory(inode_t *nodep)
   {
     entryp = directory_get(nodep, i);
 
-    printf("%d\t%d\t%s\n", i, entryp->inum, entryp->name);
+    if (include_empty_entries || entryp->inum >= 0)
+    {
+      printf("%d\t%d\t%s\n", i, entryp->inum, entryp->name);
+    }
   }
 }

@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
@@ -123,8 +124,8 @@ int alloc_inode(void)
     }
   }
 
-  // Return -1 indicating that there is no space to store more inodes.
-  return -1;
+  // Return -ENOSPC indicating that there is no space to store more inodes.
+  return -ENOSPC;
 }
 
 int free_inode(int inum)
@@ -163,14 +164,14 @@ int grow_inode(inode_t *nodep, int size)
     // Allocate the new block and ensure there is enough storage.
     if ((last_childp->blocks[last_child_used_blocks] = alloc_block()) < 0)
     {
-      return -1;
+      return -ENOSPC;
     }
 
     // Recursively grow the inode starting at the last child as a performance shortcut. If the
     // size is not greater than the size of a block nothing will happen.
     if (grow_inode(last_childp, size - BLOCK_SIZE) < 0)
     {
-      return -1;
+      return -ENOSPC;
     }
 
     // Grow the last child's size by whatever this increment was.
@@ -186,13 +187,13 @@ int grow_inode(inode_t *nodep, int size)
   // Since we know we are operating in the last child, we must create a new child.
   if ((last_childp->next = alloc_inode()) < 0)
   {
-    return -1;
+    return -ENOSPC;
   }
 
   // Recursively perform the growth in this child inode with the remaining size.
   if (grow_inode(get_inode(last_childp->next), remaining_size_change) < 0)
   {
-    return -1;
+    return -ENOSPC;
   }
 
   // Return the size.
