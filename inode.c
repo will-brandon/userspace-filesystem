@@ -81,6 +81,16 @@ int inode_total_size(inode_t *nodep)
     return size;
 }
 
+int inode_last_child_inum(int inum)
+{
+    assert(inum >= 0);
+    assert(bitmap_get(get_inode_bitmap(), inum));
+
+    inode_t *nodep = get_inode(inum);
+
+    return nodep->next < 0 ? inum : inode_last_child_inum(nodep->next);
+}
+
 inode_t *inode_last_child(inode_t *nodep)
 {
     assert(nodep);
@@ -164,7 +174,7 @@ int grow_inode(inode_t *nodep, int size)
 
     // At this point, we fill what we can into this last child and update the remaining size we must
     // find a spot for.
-    size -= INODE_MAX_LOCAL_SIZE - last_childp->size;
+    int remaining_size_change = size - (INODE_MAX_LOCAL_SIZE - last_childp->size);
     last_childp->size = INODE_MAX_LOCAL_SIZE;
 
     // Since we know we are operating in the last child, we must create a new child.
@@ -174,7 +184,7 @@ int grow_inode(inode_t *nodep, int size)
     }
 
     // Recursively perform the growth in this child inode with the remaining size.
-    if (grow_inode(get_inode(last_childp->next), size) < 0)
+    if (grow_inode(get_inode(last_childp->next), remaining_size_change) < 0)
     {
         return -1;
     }
@@ -186,6 +196,38 @@ int grow_inode(inode_t *nodep, int size)
 int shrink_inode(inode_t *nodep, int size)
 {
     assert(nodep);
+
+    // If a size of less than 1 is given return 0 and do nothing. This is a recursive base case.
+    if (size < 1)
+    {
+        return 0;
+    }
+
+    // Get the last child inode and see how many blocks it uses.
+    int last_child_inum = inode_last_child_inum(nodep);
+    inode_t *last_childp = get_inode(last_child_inum);
+    int last_child_used_blocks = bytes_to_blocks(last_childp->size);
+    
+    // If no fewer blocks are needed simply decrease the size.
+    if (bytes_to_blocks(last_childp->size - size) == last_child_used_blocks)
+    {
+        last_childp->size -= size;
+        return size;
+    }
+    /*
+    // Since we know the number of blocks will decrease we can free up the last block.
+    free_block(last_childp->blocks[last_child_used_blocks - 1]);
+    last_childp->blocks[last_child_used_blocks - 1] = -1;
+    int decrease_size = last_childp->size - (BLOCK_SIZE * (last_child_used_blocks - 1));
+    int remaining_size_change = size - decrease_size;
+    last_childp->size -= decrease_size;
+
+    if (last_childp->size == 0)
+    {
+        free_inode(last_childp);
+    }*/
+
+    return size;
 }
 
 int inode_get_bnum(inode_t *nodep, int file_bnum)
