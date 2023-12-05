@@ -81,21 +81,26 @@ int inode_total_size(inode_t *nodep)
     return size;
 }
 
-int inode_last_child_inum(int inum)
-{
-    assert(inum >= 0);
-    assert(bitmap_get(get_inode_bitmap(), inum));
-
-    inode_t *nodep = get_inode(inum);
-
-    return nodep->next < 0 ? inum : inode_last_child_inum(nodep->next);
-}
-
 inode_t *inode_last_child(inode_t *nodep)
 {
     assert(nodep);
 
     return nodep->next < 0 ? nodep : inode_last_child(get_inode(nodep->next));
+}
+
+inode_t *inode_second_to_last_child(inode_t *nodep)
+{
+    assert(nodep);
+    assert(nodep->next >= 0);
+
+    inode_t *nextp = get_inode(nodep->next);
+
+    if (nextp->next < 0)
+    {
+        return nodep;
+    }
+
+    return inode_second_to_last_child(nextp);
 }
 
 int alloc_inode(void)
@@ -134,7 +139,7 @@ int grow_inode(inode_t *nodep, int size)
 {
     assert(nodep);
 
-    // If a size of less than 1 is given return 0 and do nothing. This is a recursive base case.
+    // For a growth size of less than 1, return 0 and do nothing. This is a recursive base case.
     if (size < 1)
     {
         return 0;
@@ -197,15 +202,16 @@ int shrink_inode(inode_t *nodep, int size)
 {
     assert(nodep);
 
-    // If a size of less than 1 is given return 0 and do nothing. This is a recursive base case.
-    if (size < 1)
+    // For a shrink size of less than 1 or a node size of 0, return 0 and do nothing. This is a
+    // recursive base case. Note that a node size of 0 can only occur at the very top level. All
+    // other nodes will be freed if their size ever reaches 0.
+    if (size < 1 || nodep->size == 0)
     {
         return 0;
     }
 
     // Get the last child inode and see how many blocks it uses.
-    int last_child_inum = inode_last_child_inum(nodep);
-    inode_t *last_childp = get_inode(last_child_inum);
+    inode_t *last_childp = inode_last_child(nodep);
     int last_child_used_blocks = bytes_to_blocks(last_childp->size);
     
     // If no fewer blocks are needed simply decrease the size.
@@ -214,18 +220,29 @@ int shrink_inode(inode_t *nodep, int size)
         last_childp->size -= size;
         return size;
     }
-    /*
-    // Since we know the number of blocks will decrease we can free up the last block.
+    
+    // Since we know the number of blocks will decrease we can free up the last block and mark that
+    // slot as unused.
     free_block(last_childp->blocks[last_child_used_blocks - 1]);
     last_childp->blocks[last_child_used_blocks - 1] = -1;
+
+    // We must calculate carefully the decreased size and use it to further compute the remaining
+    // shrinkage that must occur as well as the new last child size.
     int decrease_size = last_childp->size - (BLOCK_SIZE * (last_child_used_blocks - 1));
     int remaining_size_change = size - decrease_size;
     last_childp->size -= decrease_size;
 
-    if (last_childp->size == 0)
+    // If the last child was shrunk all the way down to 0 (i.e. we took everything from the block in
+    // the first slot) we can deallocate it.
+    if (nodep->next >= 0 && last_childp->size == 0)
     {
-        free_inode(last_childp);
-    }*/
+        inode_t *second_to_last_childp = inode_second_to_last_child(nodep);
+        free_inode(second_to_last_childp->next);
+        second_to_last_childp->next = -1;
+    }
+
+    // Shrink any remaining size change that is needed.
+    shrink_inode(nodep, remaining_size_change);
 
     return size;
 }

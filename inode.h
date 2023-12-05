@@ -28,6 +28,7 @@ inode_t *get_inode(int inum);
 void clear_inode(inode_t *nodep);
 int inode_total_size(inode_t *nodep);
 inode_t *inode_last_child(inode_t *nodep);
+inode_t *inode_second_to_last_child(inode_t *nodep);
 int alloc_inode(void);
 int free_inode(int inum);
 int grow_inode(inode_t *nodep, int size);
