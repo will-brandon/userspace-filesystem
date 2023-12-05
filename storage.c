@@ -28,9 +28,30 @@ void storage_init(const char *path)
 
     print_inode_chain(nodep);
 
-    for (int i = 0; i < 13 * 20687 - 1; i++)
+    for (int i = 0; i < 20; i++)
+    {
+        grow_inode(nodep, 15);
+    }
+
+    print_inode_chain(nodep);
+
+    for (int i = 0; i < 13 * 1234 - 1; i++)
     {
         shrink_inode(nodep, 1);
+    }
+
+    print_inode_chain(nodep);
+
+    for (int i = 0; i < 27; i++)
+    {
+        grow_inode(nodep, 9);
+    }
+
+    print_inode_chain(nodep);
+
+    for (int i = 0; i < 18 - 1; i++)
+    {
+        shrink_inode(nodep, 19);
     }
 
     print_inode_chain(nodep);
