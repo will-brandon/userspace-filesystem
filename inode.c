@@ -99,21 +99,42 @@ int grow_inode(inode_t *nodep, int size)
     // Calculate the number of additional blocks that will be needed.
     int new_block_count = bytes_to_blocks(nodep->size + size) - bytes_to_blocks(nodep->size);
 
-    int available_block = inode_available_block(nodep);
-
-    if (available_block >= 0)
+    // If no new blocks are needed, simply increment the inode's size counter and return this size.
+    if (new_block_count == 0)
     {
-
+        nodep->size += size;
+        return size;
     }
 
-    if (available_block < 0)
+    int available_slot = inode_local_available_block_slot(nodep);
+
+    if (available_slot >= 0)
     {
-        if (nodep->next < 0 && (nodep->next = alloc_inode()) < 0)
+        if ((nodep->blocks[available_slot] = alloc_block()) < 0)
         {
             return -1;
         }
 
+        if (grow_inode(nodep, size - BLOCK_SIZE) < 0)
+        {
+            return -1;
+        }
 
+        nodep->size += size;
+        return size;
+    }
+
+    if (nodep->next < 0)
+    {
+        if ((nodep->next = alloc_inode()) < 0)
+        {
+            return -1;
+        }
+    }
+
+    if (grow_inode(nodep->next, size) < 0)
+    {
+        return -1;
     }
 
     // Since we have ensured there is space, increment the inode's size counter and return this
