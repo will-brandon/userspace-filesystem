@@ -11,31 +11,31 @@ void directory_init(int inum)
   assert(inum >= 0);
   assert(bitmap_get(get_inode_bitmap(), inum));
 
-  inode_t *nodep = get_inode(inum);
-  nodep->mode = nodep->mode & ~INODE_FILE | INODE_DIR;
+  inode_t *dnodep = get_inode(inum);
+  dnodep->mode = dnodep->mode & ~INODE_FILE | INODE_DIR;
 
-  directory_put(nodep, ".", inum);
+  directory_put(inum, ".", inum, FALSE);
 }
 
-int directory_entry_count(inode_t *nodep)
+int directory_entry_count(inode_t *dnodep)
 {
-  assert(nodep);
-  assert(nodep->mode & INODE_DIR);
+  assert(dnodep);
+  assert(dnodep->mode & INODE_DIR);
 
   // Determine how many entries are present (should be a clean divide).
-  return inode_total_size(nodep) / sizeof(dirent_t);
+  return inode_total_size(dnodep) / sizeof(dirent_t);
 }
 
-dirent_t *directory_get(inode_t *nodep, int i)
+dirent_t *directory_get(inode_t *dnodep, int i)
 {
-  assert(nodep);
-  assert(nodep->mode & INODE_DIR);
+  assert(dnodep);
+  assert(dnodep->mode & INODE_DIR);
   assert(i >= 0);
-  assert(i < directory_entry_count(nodep));
+  assert(i < directory_entry_count(dnodep));
 
   int entry_block = (sizeof(dirent_t) * i) / BLOCK_SIZE;
   int entry_offset = (sizeof(dirent_t) * i) % BLOCK_SIZE;
-  int bnum = inode_get_bnum(nodep, entry_block);
+  int bnum = inode_get_bnum(dnodep, entry_block);
 
   return blocks_get_block(bnum) + entry_offset;
 }
@@ -58,17 +58,17 @@ size_t directory_rename(dirent_t *entryp, const char *name)
   return copy_size;
 }
 
-int directory_lookup(inode_t *nodep, const char *name)
+int directory_lookup(inode_t *dnodep, const char *name)
 {
-  assert(nodep);
-  assert(nodep->mode & INODE_DIR);
+  assert(dnodep);
+  assert(dnodep->mode & INODE_DIR);
   assert(name);
 
   dirent_t *entryp;
 
-  for (int i = 0; i < directory_entry_count(nodep); i++)
+  for (int i = 0; i < directory_entry_count(dnodep); i++)
   {
-    entryp = directory_get(nodep, i);
+    entryp = directory_get(dnodep, i);
 
     if (entryp->inum >= 0 && !strcmp(name, entryp->name))
     {
@@ -80,29 +80,34 @@ int directory_lookup(inode_t *nodep, const char *name)
   return -1;
 }
 
-int directory_lookup_path(inode_t *nodep, const char *path)
+int directory_lookup_path(inode_t *dnodep, const char *path)
 {
-  assert(nodep);
-  assert(nodep->mode & INODE_DIR);
+  assert(dnodep);
+  assert(dnodep->mode & INODE_DIR);
   assert(path);
 }
 
 // Check for same name existing
-int directory_put(inode_t *nodep, const char *name, int inum)
+int directory_put(int dinum, const char *name, int entry_inum, bool_t update_child)
 {
-  assert(nodep);
-  assert(nodep->mode & INODE_DIR);
+  assert(dinum >= 0);
+  assert(bitmap_get(get_inode_bitmap(), dinum));
+  
+  inode_t *dnodep = get_inode(dinum);
+
+  assert(dnodep->mode & INODE_DIR);
   assert(name);
-  assert(inum >= 0);
-  assert(bitmap_get(get_inode_bitmap(), inum));
+  assert(entry_inum >= 0);
+  assert(bitmap_get(get_inode_bitmap(), entry_inum));
   
   dirent_t *entryp;
-  int entry_count = directory_entry_count(nodep);
+  int entry_count = directory_entry_count(dnodep);
+  int i;
 
   // Find an open entry if one exists.
-  for (int i = 0; i < entry_count; i++)
+  for (i = 0; i < entry_count; i++)
   {
-    entryp = directory_get(nodep, i);
+    entryp = directory_get(dnodep, i);
 
     // Indicate that a file with the given name already exists.
     if (!strcmp(name, entryp->name))
@@ -112,47 +117,72 @@ int directory_put(inode_t *nodep, const char *name, int inum)
 
     if (entryp->inum < 0)
     {
-      entryp->inum = inum;
-      directory_rename(entryp, name);
-      get_inode(inum)->refs += 1;
-
-      return i;
+      break;
     }
   }
 
-  // Since no open entry exists, create a new one and grow the inode. If the inode returns -ENOSPC
-  // indicating that the disk is full, return -ENOSPC immediately.
-  if (grow_inode(nodep, sizeof(dirent_t)) < 0)
+  // If we didn't find an empty entry, create a new one.
+  if (i >= entry_count)
   {
-    return -ENOSPC;
+    // Since no open entry exists, create a new one and grow the inode. If the inode returns -ENOSPC
+    // indicating that the disk is full, return -ENOSPC immediately.
+    if (grow_inode(dnodep, sizeof(dirent_t)) < 0)
+    {
+      return -ENOSPC;
+    }
+
+    // Insert the proper data into the entry.
+    entryp = directory_get(dnodep, entry_count);
   }
 
-  // Insert the proper data into the entry.
-  entryp = directory_get(nodep, entry_count);
-  entryp->inum = inum;
+  entryp->inum = entry_inum;
   directory_rename(entryp, name);
-  get_inode(inum)->refs += 1;
+
+  if (update_child)
+  {
+    inode_t *entry_nodep = get_inode(entry_inum);
+
+    entry_nodep->refs += 1;
+
+    // Put an entry for .. in the child.
+    if (entry_nodep->mode & INODE_DIR)
+    {
+      directory_put(entry_inum, "..", dinum, FALSE);
+    }
+  }
 
   // Return the directory entry index.
   return entry_count;
 }
 
-int directory_delete(inode_t *nodep, const char *name)
+int directory_delete(inode_t *dnodep, const char *name, bool_t update_child)
 {
-  assert(nodep);
-  assert(nodep->mode & INODE_DIR);
+  assert(dnodep);
+  assert(dnodep->mode & INODE_DIR);
   assert(name);
 
   dirent_t *entryp;
+  inode_t *entry_nodep;
 
-  for (int i = 0; i < directory_entry_count(nodep); i++)
+  for (int i = 0; i < directory_entry_count(dnodep); i++)
   {
-    entryp = directory_get(nodep, i);
+    entryp = directory_get(dnodep, i);
 
     if (!strcmp(name, entryp->name))
     {
+      entry_nodep = get_inode(entryp->inum);
+
       entryp->inum = -1;
-      get_inode(entryp->inum)->refs -= 1;
+
+      if (update_child)
+      {
+        entry_nodep->refs -= 1;
+
+        if (entry_nodep->mode & INODE_DIR)
+        {
+          directory_delete(entry_nodep, "..", FALSE);
+        }
+      }
 
       return i;
     }
@@ -166,18 +196,18 @@ slist_t *directory_list(const char *path)
   assert(path);
 }
 
-void print_directory(inode_t *nodep, bool_t include_empty_entries)
+void print_directory(inode_t *dnodep, bool_t include_empty_entries)
 {
-  assert(nodep);
-  assert(nodep->mode & INODE_DIR);
+  assert(dnodep);
+  assert(dnodep->mode & INODE_DIR);
 
   dirent_t *entryp;
 
   printf("\033[0;1mIdx\tiNum\tName\033[0m\n");
 
-  for (int i = 0; i < directory_entry_count(nodep); i++)
+  for (int i = 0; i < directory_entry_count(dnodep); i++)
   {
-    entryp = directory_get(nodep, i);
+    entryp = directory_get(dnodep, i);
 
     if (include_empty_entries || entryp->inum >= 0)
     {

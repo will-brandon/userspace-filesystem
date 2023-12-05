@@ -33,18 +33,20 @@ void storage_init(const char *path)
     }
   }
 
-  directory_put(inodes[0], "main.c", inums[1]);
-  directory_put(inodes[0], "main.o", inums[3]);
-  directory_put(inodes[0], "hello.txt", inums[5]);
-  directory_put(inodes[0], "README.md", inums[7]);
-  directory_put(inodes[0], "my stuff", inums[2]);
-  directory_put(inodes[2], "empty dir", inums[4]);
-  directory_put(inodes[2], "resume.pdf", inums[9]);
+  directory_put(inums[0], "main.c", inums[1], TRUE);
+  directory_put(inums[0], "main.o", inums[3], TRUE);
+  directory_put(inums[0], "hello.txt", inums[5], TRUE);
+  directory_put(inums[0], "README.md", inums[7], TRUE);
+  directory_put(inums[0], "my stuff", inums[2], TRUE);
+  directory_put(inums[2], "empty dir", inums[4], TRUE);
+  directory_put(inums[2], "resume.pdf", inums[9], TRUE);
 
   print_directory(inodes[0], TRUE);
-  directory_delete(inodes[0], "hello.txt");
-  directory_put(inodes[0], "a.txt", inums[11]);
+  directory_delete(inodes[0], "hello.txt", TRUE);
+  directory_put(inums[0], "a.txt", inums[11], TRUE);
   print_directory(inodes[0], TRUE);
+  print_directory(inodes[2], TRUE);
+  print_directory(inodes[4], TRUE);
 }
 
 void storage_deinit(void)
