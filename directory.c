@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <string.h>
+#include "util.h"
 #include "specs.h"
 #include "bitmap.h"
 #include "inode.h"
@@ -39,6 +40,24 @@ dirent_t *directory_get(inode_t *nodep, int i)
   return blocks_get_block(bnum) + offset;
 }
 
+size_t directory_rename(dirent_t *entryp, const char *name)
+{
+  assert(entryp);
+  assert(entryp->inum >= 0);
+  assert(name);
+
+  // Get the length of the name string and determine how much of it will actually fit.
+  size_t name_len = strlen(name);
+  size_t copy_size = MIN(name_len, DIR_NAME_LENGTH - 1);
+
+  // Copy the name into the buffer and ensure a null terminator is included.
+  memcpy(entryp->name, name, name_len);
+  entryp->name[name_len] = '\0';
+
+  // Return how much of the name was actually used.
+  return copy_size;
+}
+
 int directory_lookup(inode_t *nodep, const char *name)
 {
   assert(nodep);
@@ -56,6 +75,9 @@ int directory_lookup(inode_t *nodep, const char *name)
       return entryp->inum;
     }
   }
+
+  // Return -1 to indicate if no directory entry was found.
+  return -1;
 }
 
 int directory_lookup_path(inode_t *nodep, const char *path)
@@ -73,6 +95,23 @@ int directory_put(inode_t *nodep, const char *name, int inum)
   assert(name);
   assert(inum >= 0);
   assert(bitmap_get(get_inode_bitmap(), inum));
+  
+  dirent_t *entryp;
+  int entry_count = directory_entry_count(nodep);
+
+  // Find an open entry if one exists.
+  for (int i = 0; i < entry_count; i++)
+  {
+    entryp = directory_get(nodep, i);
+
+    if (entryp->inum < 0)
+    {
+      strcpy(entryp->name, name);
+      entryp->inum = inum;
+
+      return i;
+    }
+  }
 
 
 }
