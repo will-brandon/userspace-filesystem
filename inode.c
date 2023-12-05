@@ -19,6 +19,34 @@ void print_inode(inode_t *nodep)
         nodep->next);
 }
 
+void print_inode_chain(inode_t *nodep)
+{
+    assert(nodep);
+
+    int i, j;
+
+    for (i = 0 ;; i++)
+    {
+        for (j = 0; j < i; j++)
+        {
+            printf(" ");
+        }
+        if (j > 0)
+        {
+            printf("\u2514");
+        }
+
+        print_inode(nodep);
+
+        if (nodep->next < 0)
+        {
+            return;
+        }
+
+        nodep = get_inode(nodep->next);
+    }
+}
+
 inode_t *get_inode(int inum)
 {
     assert(inum < MAX_INODE_COUNT);

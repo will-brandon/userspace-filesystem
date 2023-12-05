@@ -23,6 +23,7 @@ typedef struct inode
 } inode_t;
 
 void print_inode(inode_t *nodep);
+void print_inode_chain(inode_t *nodep);
 inode_t *get_inode(int inum);
 void clear_inode(inode_t *nodep);
 int inode_total_size(inode_t *nodep);
