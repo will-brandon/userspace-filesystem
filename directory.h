@@ -19,11 +19,13 @@ typedef struct dirent {
   char _reserved[12];
 } dirent_t;
 
-void directory_init(void);
-int directory_lookup(inode_t *di, const char *name);
-int directory_put(inode_t *di, const char *name, int inum);
-int directory_delete(inode_t *di, const char *name);
+void directory_init(int inum);
+int directory_entry_count(inode_t *nodep);
+int directory_lookup(inode_t *nodep, const char *name);
+int directory_lookup_path(inode_t *nodep, const char *path);
+int directory_put(inode_t *nodep, const char *name, int inum);
+int directory_delete(inode_t *nodep, const char *name);
 slist_t *directory_list(const char *path);
-void print_directory(inode_t *dd);
+void print_directory(inode_t *nodep);
 
 #endif
