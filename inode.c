@@ -27,13 +27,14 @@ void print_inode_chain(inode_t *nodep)
 
   for (i = 0;; i++)
   {
-    for (j = 0; j < i; j++)
+    for (j = 0; j < 3 * (i - 1); j++)
     {
       printf(" ");
     }
-    if (j > 0)
+
+    if (i > 0)
     {
-      printf("\u2514");
+      printf(" \u2514\u2500");
     }
 
     print_inode(nodep);

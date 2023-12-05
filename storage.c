@@ -2,6 +2,7 @@
 #include "storage.h"
 #include "blocks.h"
 #include "inode.h"
+#include "directory.h"
 #include "slist.h"
 #include "bitmap.h"
 
@@ -22,28 +23,13 @@ void storage_init(const char *path)
   inode_t *node2p = get_inode(inum2);
   inode_t *node3p = get_inode(inum3);
 
-  for (int i = 0; i < 40000; i++)
-  {
-    grow_inode(node1p, 1);
-  }
+  printf("BEFORE: %o\n", node1p->mode);
 
-  for (int i = 0; i < 40000; i++)
-  {
-    grow_inode(node2p, 1);
-  }
+  directory_init(inum1);
 
-  for (int i = 0; i < 40000; i++)
-  {
-    grow_inode(node1p, 1);
-  }
+  printf("BEFORE: %o\n", node1p->mode);
 
-  print_inode_chain(node1p);
-  print_inode_chain(node2p);
-
-  for (int i = 0; i < bytes_to_blocks(inode_total_size(node1p)); i++)
-  {
-    printf("BLOCK %d: %d\n", i, inode_get_bnum(node1p, i));
-  }
+  print_directory(node1p);
 }
 
 void storage_deinit(void)
