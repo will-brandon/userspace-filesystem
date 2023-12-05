@@ -9,7 +9,7 @@
 void print_inode(inode_t *nodep)
 {
     printf(
-        "INODE(r=%d, m=%d, s=%d, b={%d, %d, %d, %d}, n=%d)\n",
+        "INODE(r=%d, m=%o, s=%d, b={%d, %d, %d, %d}, n=%d)\n",
         nodep->refs, nodep->mode, nodep->size,
         nodep->blocks[0], nodep->blocks[1], nodep->blocks[2], nodep->blocks[3],
         nodep->next);
@@ -32,7 +32,7 @@ void clear_inode(inode_t *nodep)
     nodep->refs = 0;
     nodep->mode = 0100644;
     nodep->size = 0;
-    memset(nodep->blocks, 0, sizeof(int) * 4);
+    memset(nodep->blocks, -1, sizeof(int) * INODE_BLOCK_COUNT);
     nodep->next = -1;
 }
 
@@ -43,15 +43,15 @@ int alloc_inode(void)
 
     // Search for the first available inode in the bitmap. If a free inode is found then reset its
     // values.
-    for (int i = 0; i < MAX_INODE_COUNT; i++)
+    for (int inum = 0; inum < MAX_INODE_COUNT; inum++)
     {
-        if (!bitmap_get(inode_bitmap, i))
+        if (!bitmap_get(inode_bitmap, inum))
         {
-            nodep = get_inode(i);
+            nodep = get_inode_start() + (sizeof(inode_t) * inum);
             clear_inode(nodep);
-            bitmap_put(inode_bitmap, i, 1);
+            bitmap_put(inode_bitmap, inum, 1);
 
-            return i;
+            return inum;
         }
     }
 
@@ -59,9 +59,16 @@ int alloc_inode(void)
     return -1;
 }
 
-void free_inode(int inum)
+int free_inode(int inum)
 {
-    
+    // Ensure the inum is in range and was actually in use.
+    if (inum >= MAX_INODE_COUNT || !bitmap_get(get_inode_bitmap(), inum))
+    {
+        return -1;
+    }
+
+    // Set the inode to unused.
+    bitmap_put(get_inode_bitmap(), inum, 0);
 }
 
 int grow_inode(inode_t *nodep, int size)

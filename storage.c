@@ -1,6 +1,9 @@
+#include "specs.h"
 #include "storage.h"
 #include "blocks.h"
+#include "inode.h"
 #include "slist.h"
+#include "bitmap.h"
 
 int inode_for_path(const char *path)
 {
@@ -10,6 +13,11 @@ int inode_for_path(const char *path)
 void storage_init(const char *path)
 {
     blocks_init(path);
+
+    int inum = alloc_inode();
+    printf("INUM: %d\n", inum);
+    inode_t *nodep = get_inode(inum);
+    print_inode(nodep);
 }
 
 void storage_deinit(void)
