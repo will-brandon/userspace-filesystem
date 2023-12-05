@@ -22,7 +22,7 @@ typedef struct dirent {
 void directory_init(int inum);
 int directory_entry_count(inode_t *nodep);
 dirent_t *directory_get(inode_t *nodep, int i);
-int directory_rename(dirent_t *entryp, const char *name);
+size_t directory_rename(dirent_t *entryp, const char *name);
 int directory_lookup(inode_t *nodep, const char *name);
 int directory_lookup_path(inode_t *nodep, const char *path);
 int directory_put(inode_t *nodep, const char *name, int inum);

@@ -16,20 +16,32 @@ void storage_init(const char *path)
 
   blocks_clear();
 
-  int inum1 = alloc_inode();
-  int inum2 = alloc_inode();
-  int inum3 = alloc_inode();
-  inode_t *node1p = get_inode(inum1);
-  inode_t *node2p = get_inode(inum2);
-  inode_t *node3p = get_inode(inum3);
+  #define INODES 10
 
-  printf("BEFORE: %o\n", node1p->mode);
+  int inums[INODES];
+  inode_t *inodes[INODES];
 
-  directory_init(inum1);
+  for (size_t i = 0; i < INODES; i++)
+  {
+    inums[i] = alloc_inode();
+    inodes[i] = get_inode(inums[i]);
 
-  printf("BEFORE: %o\n", node1p->mode);
+    if (i % 2 == 0)
+    {
+      directory_init(inums[i]);
+    }
+  }
 
-  print_directory(node1p);
+  directory_put(inodes[0], "main.c", inums[1]);
+  directory_put(inodes[0], "main.o", inums[3]);
+  directory_put(inodes[0], "hello.txt", inums[5]);
+  directory_put(inodes[0], "README.md", inums[7]);
+  directory_put(inodes[0], "my stuff", inums[2]);
+  directory_put(inodes[2], "empty dir", inums[4]);
+  directory_put(inodes[2], "resume.pdf", inums[9]);
+  print_directory(inodes[0]);
+  print_directory(inodes[2]);
+  print_directory(inodes[4]);
 }
 
 void storage_deinit(void)

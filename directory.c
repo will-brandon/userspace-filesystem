@@ -33,11 +33,11 @@ dirent_t *directory_get(inode_t *nodep, int i)
   assert(i >= 0);
   assert(i < directory_entry_count(nodep));
 
-  int file_bnum = (sizeof(dirent_t) * i) / BLOCK_SIZE;
-  int bnum = inode_get_bnum(nodep, file_bnum);
-  int offset = (sizeof(dirent_t) * i) % BLOCK_SIZE;
+  int entry_block = (sizeof(dirent_t) * i) / BLOCK_SIZE;
+  int entry_offset = (sizeof(dirent_t) * i) % BLOCK_SIZE;
+  int bnum = inode_get_bnum(nodep, entry_block);
 
-  return blocks_get_block(bnum) + offset;
+  return blocks_get_block(bnum) + entry_offset;
 }
 
 size_t directory_rename(dirent_t *entryp, const char *name)
@@ -106,14 +106,25 @@ int directory_put(inode_t *nodep, const char *name, int inum)
 
     if (entryp->inum < 0)
     {
-      strcpy(entryp->name, name);
+      directory_rename(entryp, name);
       entryp->inum = inum;
 
       return i;
     }
   }
 
+  
 
+  // Since no open entry exists, create a new one and grow the inode. If the inode returns -1
+  // indicating that the disk is full, return -1 immediately.
+  if (grow_inode(nodep, sizeof(dirent_t)) < 0)
+  {
+    return -1;
+  }
+
+  entryp = directory_get(nodep, entry_count);
+  directory_rename(entryp, name);
+  entryp->inum = inum;
 }
 
 int directory_delete(inode_t *nodep, const char *name)
@@ -135,7 +146,7 @@ void print_directory(inode_t *nodep)
 
   dirent_t *entryp;
 
-  printf("\033[0;1m#\tiNum\tName\033[0m\n");
+  printf("\033[0;1mIdx\tiNum\tName\033[0m\n");
 
   for (int i = 0; i < directory_entry_count(nodep); i++)
   {
