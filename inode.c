@@ -249,5 +249,23 @@ int shrink_inode(inode_t *nodep, int size)
 
 int inode_get_bnum(inode_t *nodep, int file_bnum)
 {
+    assert(nodep);
+    assert(file_bnum >= 0);
 
+    // If the file block number is less than the block cap just grab it from the local block list.
+    if (file_bnum < INODE_LOCAL_BLOCK_CAP)
+    {
+        // If the block is not present, -1 will be the value and therefore will get returned which
+        // takes care of itself nicely.
+        return nodep->blocks[file_bnum];
+    }
+
+    // Since we didn't find the block in the local list, return -1 if the next child doesn't exist.
+    if (nodep->next < 0)
+    {
+        return -1;
+    }
+
+    // Recursively look into the child.
+    return inode_get_bnum(get_inode(nodep->next), file_bnum - INODE_LOCAL_BLOCK_CAP);
 }

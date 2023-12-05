@@ -33,7 +33,7 @@ void blocks_init(const char *image_path);
 void blocks_free(void);
 
 /**
- * Disk destroyer. :)
+ * Clears all blocks but still keeps the first RESERVED_BLOCKS blocks reserved.
  */
 void blocks_clear(void);
 

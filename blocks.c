@@ -70,6 +70,13 @@ void blocks_free(void)
 void blocks_clear(void)
 {
   memset(blocks_base, 0, NUFS_SIZE);
+
+  // block 0 stores the block bitmap and the inode bitmap
+  void *bbm = get_blocks_bitmap();
+
+  // Mark both blocks as occupied
+  bitmap_put(bbm, 0, 1);
+  bitmap_put(bbm, 1, 1);
 }
 
 // Get the given block, returning a pointer to its start.
