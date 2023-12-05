@@ -17,7 +17,7 @@ void storage_init(const char *path)
 
   blocks_clear();
 
-  #define INODES 10
+  #define INODES 15
 
   int inums[INODES];
   inode_t *inodes[INODES];
@@ -34,15 +34,17 @@ void storage_init(const char *path)
   }
 
   directory_put(inodes[0], "main.c", inums[1]);
-  directory_put(inodes[0], "main.c", inums[3]);
+  directory_put(inodes[0], "main.o", inums[3]);
   directory_put(inodes[0], "hello.txt", inums[5]);
   directory_put(inodes[0], "README.md", inums[7]);
   directory_put(inodes[0], "my stuff", inums[2]);
   directory_put(inodes[2], "empty dir", inums[4]);
   directory_put(inodes[2], "resume.pdf", inums[9]);
+
   print_directory(inodes[0], TRUE);
-  print_directory(inodes[2], TRUE);
-  print_directory(inodes[4], TRUE);
+  directory_delete(inodes[0], "hello.txt");
+  directory_put(inodes[0], "a.txt", inums[11]);
+  print_directory(inodes[0], TRUE);
 }
 
 void storage_deinit(void)

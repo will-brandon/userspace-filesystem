@@ -70,7 +70,7 @@ int directory_lookup(inode_t *nodep, const char *name)
   {
     entryp = directory_get(nodep, i);
 
-    if (entryp->inum >= 0 && !strcmp(entryp->name, name))
+    if (entryp->inum >= 0 && !strcmp(name, entryp->name))
     {
       return entryp->inum;
     }
@@ -112,8 +112,9 @@ int directory_put(inode_t *nodep, const char *name, int inum)
 
     if (entryp->inum < 0)
     {
-      directory_rename(entryp, name);
       entryp->inum = inum;
+      directory_rename(entryp, name);
+      get_inode(inum)->refs += 1;
 
       return i;
     }
@@ -128,8 +129,9 @@ int directory_put(inode_t *nodep, const char *name, int inum)
 
   // Insert the proper data into the entry.
   entryp = directory_get(nodep, entry_count);
-  directory_rename(entryp, name);
   entryp->inum = inum;
+  directory_rename(entryp, name);
+  get_inode(inum)->refs += 1;
 
   // Return the directory entry index.
   return entry_count;
@@ -141,7 +143,22 @@ int directory_delete(inode_t *nodep, const char *name)
   assert(nodep->mode & INODE_DIR);
   assert(name);
 
+  dirent_t *entryp;
 
+  for (int i = 0; i < directory_entry_count(nodep); i++)
+  {
+    entryp = directory_get(nodep, i);
+
+    if (!strcmp(name, entryp->name))
+    {
+      entryp->inum = -1;
+      get_inode(entryp->inum)->refs -= 1;
+
+      return i;
+    }
+  }
+
+  return -ENOENT;
 }
 
 slist_t *directory_list(const char *path)
