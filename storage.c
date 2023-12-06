@@ -12,6 +12,9 @@ static inode_t *root_nodep;
 
 int inode_for_path(const char *path)
 {
+  assert(path);
+
+  
 }
 
 void storage_init(const char *path)
@@ -68,10 +71,6 @@ void storage_init(const char *path)
   directory_put(inums[6], "hw2.pdf", inums[13], TRUE);
   directory_put(inums[6], "hw3.pdf", inums[15], TRUE);
   directory_put(inums[6], "01234567890123456789012345678901234567890123456789012345678this will all be truncated", inums[8], TRUE);
-
-  slist_t *dlist = directory_list(inodes[6]);
-  slist_print(dlist, "\n");
-  printf("\n");
 }
 
 void storage_deinit(void)
