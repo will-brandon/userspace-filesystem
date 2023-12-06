@@ -21,13 +21,15 @@ typedef struct dirent {
 } dirent_t;
 
 void directory_init(int inum);
-int directory_entry_count(inode_t *dnodep);
-dirent_t *directory_get(inode_t *dnodep, int i);
-size_t directory_rename(dirent_t *entryp, const char *name);
-int directory_lookup(inode_t *dnodep, const char *name);
-int directory_put(int dinum, const char *name, int entry_inum, bool_t update_child);
+int directory_total_entry_count(inode_t *dnodep);
+int directory_populated_entry_count(inode_t *dnodep);
+dirent_t *directory_get_entry(inode_t *dnodep, int entry_num);
+int directory_lookup_entry_num(inode_t *dnodep, const char *name);
+int directory_lookup_inum(inode_t *dnodep, const char *name);
+int directory_rename_entry(inode_t *dnodep, int entry_num, const char *name);
+int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t update_child);
 int directory_delete(inode_t *dnodep, const char *name, bool_t update_child);
 slist_t *directory_list(inode_t *dnodep);
-void print_directory(inode_t *dnodep, bool_t include_empty_entries);
+void directory_print(inode_t *dnodep, bool_t include_empty_entries);
 
 #endif

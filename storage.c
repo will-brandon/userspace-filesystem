@@ -1,3 +1,6 @@
+#define _GNU_SOURCE
+
+#include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
 #include <string.h>
@@ -47,7 +50,7 @@ int inode_for_path_comps_in(int dinum, slist_t *comps)
 
   // Lookup the inode in the directory. If it is an error, we can conveniently return this error
   // code. If the lookup succeeded and this is the end of the path, return the entry.
-  if ((entry_inum = directory_lookup(dnodep, comps->data)) < 0 || !comps->next)
+  if ((entry_inum = directory_lookup_inum(dnodep, comps->data)) < 0 || !comps->next)
   {
     return entry_inum;
   }
@@ -103,7 +106,7 @@ void storage_init(const char *path)
 
   // Allocate the root inode and make it a directory if it doesn't already exist. Note that this
   // relies on ROOT_INUM being 0. Otherwise, there is no guarantee ROOT_INUM will be allocated.
-  if (!bitmap_get(get_inode_bitmap(), ROOT_INUM))
+  if (!inode_exists(ROOT_INUM))
   {
     assert(alloc_inode() == ROOT_INUM);
     directory_init(ROOT_INUM);
@@ -127,7 +130,7 @@ void storage_init(const char *path)
       directory_init(inums[i]);
     }
   }
-  
+  /*
   directory_put(ROOT_INUM, "code", inums[0], TRUE);
   directory_put(ROOT_INUM, "school stuff", inums[2], TRUE);
   directory_put(ROOT_INUM, "README.md", inums[1], TRUE);
@@ -145,8 +148,21 @@ void storage_init(const char *path)
   directory_put(inums[6], "hw2.pdf", inums[13], TRUE);
   directory_put(inums[6], "hw3.pdf", inums[15], TRUE);
   directory_put(inums[6], "01234567890123456789012345678901234567890123456789012345678this will all be truncated", inums[8], TRUE);
+  */
 
-  printf("%d\n", inode_for_path("/////school stuff////////DS4400/////////01234567890123456789012345678901234567890123456789012345678"));
+  int new_file_count = 15;
+
+  printf("Creating %d new files in root.\n", new_file_count);
+
+  char buffer[] = "01234567890123456789012345678901234567890123456789012345678901234567890123456789";
+
+  for (int i = 0; i < new_file_count; i++)
+  {
+    int inum = alloc_inode();
+    directory_add_entry(ROOT_INUM, buffer + i, inum, TRUE);
+  }
+
+  directory_print(root_nodep, TRUE);
 }
 
 void storage_deinit(void)
