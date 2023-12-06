@@ -28,13 +28,7 @@ static void *blocks_base = 0;
 // Get the number of blocks needed to store the given number of bytes.
 int bytes_to_blocks(int bytes)
 {
-  int quo = bytes / BLOCK_SIZE;
-  int rem = bytes % BLOCK_SIZE;
-  if (rem == 0) {
-    return quo;
-  } else {
-    return quo + 1;
-  }
+  return (bytes + BLOCK_SIZE - 1) / BLOCK_SIZE;
 }
 
 // Load and initialize the given disk image.
