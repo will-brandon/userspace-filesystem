@@ -146,7 +146,7 @@ void storage_init(const char *path)
   directory_put(inums[6], "hw3.pdf", inums[15], TRUE);
   directory_put(inums[6], "01234567890123456789012345678901234567890123456789012345678this will all be truncated", inums[8], TRUE);
 
-  printf("%d\n", inode_for_path("README.md/"));
+  printf("%d\n", inode_for_path("/////school stuff////////DS4400/////////01234567890123456789012345678901234567890123456789012345678"));
 }
 
 void storage_deinit(void)

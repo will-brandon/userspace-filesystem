@@ -44,22 +44,22 @@ slist_t *slist_explode(const char *text, char delim)
     return NULL;
   }
 
-  int plen = 0;
-  while (text[plen] != '\0' && text[plen] != delim)
+  int next = 0;
+  while (text[next] != '\0' && text[next] != delim)
   {
-    plen += 1;
+    next += 1;
   }
 
   int skip = 0;
-  if (text[plen] == delim)
+  if (text[next] == delim)
   {
     skip = 1;
   }
 
-  slist_t *rest = slist_explode(text + plen + skip, delim);
-  char *part = alloca(plen + 2);
-  memcpy(part, text, plen);
-  part[plen] = 0;
+  slist_t *rest = slist_explode(text + next + skip, delim);
+  char *part = alloca(next + 2);
+  memcpy(part, text, next);
+  part[next] = 0;
 
   return slist_cons(part, rest);
 }
