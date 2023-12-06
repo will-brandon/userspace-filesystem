@@ -7,7 +7,7 @@
 #include "util.h"
 #include "specs.h"
 #include "storage.h"
-#include "blocks.h"
+#include "block.h"
 #include "inode.h"
 #include "directory.h"
 #include "slist.h"
@@ -26,8 +26,8 @@ void test(void)
 
   for (size_t i = 0; i < INODES; i++)
   {
-    inums[i] = alloc_inode();
-    inodes[i] = get_inode(inums[i]);
+    inums[i] = inode_alloc();
+    inodes[i] = inode_get(inums[i]);
     
     if (i % 2 == 0)
     {
@@ -75,7 +75,7 @@ int inum_for_path_comps_in(int dinum, slist_t *comps)
   assert(inode_exists(dinum));
 
   // Get the node.
-  inode_t *dnodep = get_inode(dinum);
+  inode_t *dnodep = inode_get(dinum);
 
   assert(dnodep->mode & INODE_DIR);
 
@@ -110,7 +110,7 @@ int inum_for_path_comps_in(int dinum, slist_t *comps)
   }
 
   // We ensure the entry node is a directory since there is more path coming.
-  if (!(get_inode(entry_inum)->mode & INODE_DIR))
+  if (!(inode_get(entry_inum)->mode & INODE_DIR))
   {
     return -ENOTDIR;
   }
@@ -123,7 +123,7 @@ int inum_for_path_in(int dinum, const char *path)
 {
   assert(dinum >= 0);
   assert(inode_exists(dinum));
-  assert(get_inode(dinum)->mode & INODE_DIR);
+  assert(inode_get(dinum)->mode & INODE_DIR);
   assert(path);
 
   // Split the path string into components and delegate to the list version of this function.
@@ -147,21 +147,21 @@ void storage_init(const char *path)
   assert(path);
 
   // Create a memory map and initialize the disk blocks and.
-  blocks_init(path);
+  block_init(path);
 
   printf("\033[0;1;31mREMEMBER TO REMOVE THIS CLEAR FUNCTION DUMBASS!\033[0m\n");
-  blocks_clear();
+  storage_clear();
 
   // Allocate the root inode and make it a directory if it doesn't already exist. Note that this
   // relies on ROOT_INUM being 0. Otherwise, there is no guarantee ROOT_INUM will be allocated.
   if (!inode_exists(ROOT_INUM))
   {
-    assert(alloc_inode() == ROOT_INUM);
+    assert(inode_alloc() == ROOT_INUM);
     directory_init(ROOT_INUM);
   }
 
   // Initialize a pointer to the root node structure.
-  root_nodep = get_inode(ROOT_INUM);
+  root_nodep = inode_get(ROOT_INUM);
 
   test();
 }
@@ -169,7 +169,13 @@ void storage_init(const char *path)
 void storage_deinit(void)
 {
   // Persist the blocks in the memory map to disk .
-  blocks_free();
+  block_deinit();
+}
+
+void storage_clear(void)
+{
+  // Clear all the blocks and reset the reserved blocks.
+  block_clear();
 }
 
 int storage_access(const char *path, int mode)
@@ -182,7 +188,7 @@ int storage_access(const char *path, int mode)
     return 0;
   }
 
-  // Lookup the inode at the given path.
+  // Lookup the inode inum at the given path.
   int inum = inum_for_path(path);
 
   // If a lookup error occured return the error code.
@@ -207,7 +213,7 @@ int storage_stat(const char *path, struct stat *stp)
   assert(path);
   assert(stp);
 
-  // Lookup the inode at the given path.
+  // Lookup the inode inum at the given path.
   int inum = inum_for_path(path);
 
   // If a lookup error occured return the error code.
@@ -217,7 +223,7 @@ int storage_stat(const char *path, struct stat *stp)
   }
 
   // Get a pointer to the inode.
-  inode_t *nodep = get_inode(inum);
+  inode_t *nodep = inode_get(inum);
 
   // Set all used stats.
   stp->st_ino = inum;
@@ -253,10 +259,42 @@ int storage_write(const char *path, const char *buf, size_t size, off_t offset)
 
 int storage_truncate(const char *path, off_t size)
 {
+  assert(path);
+  assert(size >= 0);
+
+  // Lookup the inode inum at the given path.
+  int inum = inum_for_path(path);
+
+  // If a lookup error occured return the error code.
+  if (inum < 0)
+  {
+    return inum;
+  }
+
+  
+
+  // Get a pointer to the inode.
+  inode_t *nodep = inode_get(inum);
+
+  return 0;
 }
 
 int storage_mknod(const char *path, int mode)
 {
+  assert(path);
+
+  // Allocate a new node.
+  int inum = inode_alloc();
+
+  // If an error occured allocating the node, return the error.
+  if (inum < 0)
+  {
+    return inum;
+  }
+
+  // Set the mode of the node and return the success code 0.
+  inode_get(inum)->mode = mode;
+  return 0;
 }
 
 int storage_unlink(const char *path)
@@ -289,7 +327,7 @@ int storage_list(const char *path, slist_t **namesp)
   }
 
   // Get a pointer to the inode.
-  inode_t *dnodep = get_inode(inum);
+  inode_t *dnodep = inode_get(inum);
 
   // If the node is not a directory return an error code.
   if (!(dnodep->mode & INODE_DIR))

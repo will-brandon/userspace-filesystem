@@ -24,18 +24,18 @@ typedef struct inode
   int next;                          // -1 if no other inode, otherwise inum of next inode
 } inode_t;
 
-void print_inode(inode_t *nodep);
-void print_inode_tree(inode_t *nodep);
+void inode_print(inode_t *nodep);
+void inode_print_tree(inode_t *nodep);
 bool_t inode_exists(int inum);
-inode_t *get_inode(int inum);
-void clear_inode(inode_t *nodep);
+inode_t *inode_get(int inum);
+void inode_reset(inode_t *nodep);
 int inode_total_size(inode_t *nodep);
 inode_t *inode_last_child(inode_t *nodep);
 inode_t *inode_second_to_last_child(inode_t *nodep);
-int alloc_inode(void);
-int free_inode(int inum);
-int grow_inode(inode_t *nodep, int size);
-int shrink_inode(inode_t *nodep, int size);
+int inode_alloc(void);
+int inode_free(int inum);
+int inode_grow(inode_t *nodep, int size);
+int inode_shrink(inode_t *nodep, int size);
 int inode_get_bnum(inode_t *nodep, int file_bnum);
 
 #endif

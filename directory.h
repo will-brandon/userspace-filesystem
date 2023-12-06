@@ -6,18 +6,19 @@
 #ifndef _DIRECTORY_H
 #define _DIRECTORY_H
 
-#define DIR_NAME_LENGTH 60
+#define MAX_DIR_ENTRY_NAME_LEN 60
 
 #include "util.h"
-#include "blocks.h"
+#include "block.h"
 #include "inode.h"
 #include "slist.h"
 
 // Size of exactly 64
 typedef struct dirent {
-  char name[DIR_NAME_LENGTH]; // Note that this string is guarunteed to have a null terminator for
-                              // safety. This means its content length is DIR_NAME_LENGTH - 1.
-  int inum;                   // -1 if unused
+  char name[MAX_DIR_ENTRY_NAME_LEN]; // Note that this string is guarunteed to have a null
+                                     // terminator for safety. This means its content length is
+                                     // MAX_DIR_ENTRY_NAME_LEN - 1.
+  int inum; // -1 if unused
 } dirent_t;
 
 void directory_init(int inum);

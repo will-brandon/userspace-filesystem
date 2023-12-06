@@ -5,11 +5,11 @@
 #include <assert.h>
 #include "specs.h"
 #include "bitmap.h"
-#include "blocks.h"
+#include "block.h"
 #include "inode.h"
 #include "util.h"
 
-void print_inode(inode_t *nodep)
+void inode_print(inode_t *nodep)
 {
   assert(nodep);
 
@@ -20,7 +20,7 @@ void print_inode(inode_t *nodep)
       nodep->next);
 }
 
-void print_inode_tree(inode_t *nodep)
+void inode_print_tree(inode_t *nodep)
 {
   assert(nodep);
 
@@ -35,14 +35,14 @@ void print_inode_tree(inode_t *nodep)
       printf(" \u2514\u2500");
     }
 
-    print_inode(nodep);
+    inode_print(nodep);
 
     if (nodep->next < 0)
     {
       return;
     }
 
-    nodep = get_inode(nodep->next);
+    nodep = inode_get(nodep->next);
   }
 }
 
@@ -50,19 +50,19 @@ bool_t inode_exists(int inum)
 {
   assert(inum >= 0);
 
-  return bitmap_get(get_inode_bitmap(), inum);
+  return bitmap_get(block_inode_bitmap_start(), inum);
 }
 
-inode_t *get_inode(int inum)
+inode_t *inode_get(int inum)
 {
   assert(inum < MAX_INODE_COUNT);
   assert(inode_exists(inum));
 
   // Return the proper inode at the given offset.
-  return get_inode_start() + (sizeof(inode_t) * inum);
+  return block_inode_start() + (sizeof(inode_t) * inum);
 }
 
-void clear_inode(inode_t *nodep)
+void inode_clear(inode_t *nodep)
 {
   assert(nodep);
 
@@ -81,7 +81,7 @@ int inode_total_size(inode_t *nodep)
 
   if (nodep->next >= 0)
   {
-    size += inode_total_size(get_inode(nodep->next));
+    size += inode_total_size(inode_get(nodep->next));
   }
 
   return size;
@@ -91,7 +91,7 @@ inode_t *inode_last_child(inode_t *nodep)
 {
   assert(nodep);
 
-  return nodep->next < 0 ? nodep : inode_last_child(get_inode(nodep->next));
+  return nodep->next < 0 ? nodep : inode_last_child(inode_get(nodep->next));
 }
 
 inode_t *inode_second_to_last_child(inode_t *nodep)
@@ -99,7 +99,7 @@ inode_t *inode_second_to_last_child(inode_t *nodep)
   assert(nodep);
   assert(nodep->next >= 0);
 
-  inode_t *nextp = get_inode(nodep->next);
+  inode_t *nextp = inode_get(nodep->next);
 
   if (nextp->next < 0)
   {
@@ -109,9 +109,9 @@ inode_t *inode_second_to_last_child(inode_t *nodep)
   return inode_second_to_last_child(nextp);
 }
 
-int alloc_inode(void)
+int inode_alloc(void)
 {
-  void *inode_bitmap = get_inode_bitmap();
+  void *inode_bitmap = block_inode_bitmap_start();
   inode_t *nodep;
 
   // Search for the first available inode in the bitmap. If a free inode is found then reset its
@@ -120,8 +120,8 @@ int alloc_inode(void)
   {
     if (!bitmap_get(inode_bitmap, inum))
     {
-      nodep = get_inode_start() + (sizeof(inode_t) * inum);
-      clear_inode(nodep);
+      nodep = block_inode_start() + (sizeof(inode_t) * inum);
+      inode_clear(nodep);
       bitmap_put(inode_bitmap, inum, 1);
 
       return inum;
@@ -132,16 +132,16 @@ int alloc_inode(void)
   return -ENOSPC;
 }
 
-int free_inode(int inum)
+int inode_free(int inum)
 {
   assert(inum < MAX_INODE_COUNT);
   assert(inode_exists(inum));
 
   // Set the inode to unused.
-  bitmap_put(get_inode_bitmap(), inum, 0);
+  bitmap_put(block_inode_bitmap_start(), inum, 0);
 }
 
-int grow_inode(inode_t *nodep, int size)
+int inode_grow(inode_t *nodep, int size)
 {
   assert(nodep);
 
@@ -166,14 +166,14 @@ int grow_inode(inode_t *nodep, int size)
   if (last_child_used_blocks < INODE_LOCAL_BLOCK_CAP)
   {
     // Allocate the new block and ensure there is enough storage.
-    if ((last_childp->blocks[last_child_used_blocks] = alloc_block()) < 0)
+    if ((last_childp->blocks[last_child_used_blocks] = block_alloc()) < 0)
     {
       return -ENOSPC;
     }
 
     // Recursively grow the inode starting at the last child as a performance shortcut. If the
     // size is not greater than the size of a block nothing will happen.
-    if (grow_inode(last_childp, size - BLOCK_SIZE) < 0)
+    if (inode_grow(last_childp, size - BLOCK_SIZE) < 0)
     {
       return -ENOSPC;
     }
@@ -189,13 +189,13 @@ int grow_inode(inode_t *nodep, int size)
   last_childp->size = INODE_MAX_LOCAL_SIZE;
 
   // Since we know we are operating in the last child, we must create a new child.
-  if ((last_childp->next = alloc_inode()) < 0)
+  if ((last_childp->next = inode_alloc()) < 0)
   {
     return -ENOSPC;
   }
 
   // Recursively perform the growth in this child inode with the remaining size.
-  if (grow_inode(get_inode(last_childp->next), remaining_size_change) < 0)
+  if (inode_grow(inode_get(last_childp->next), remaining_size_change) < 0)
   {
     return -ENOSPC;
   }
@@ -204,7 +204,7 @@ int grow_inode(inode_t *nodep, int size)
   return size;
 }
 
-int shrink_inode(inode_t *nodep, int size)
+int inode_strink(inode_t *nodep, int size)
 {
   assert(nodep);
 
@@ -229,7 +229,7 @@ int shrink_inode(inode_t *nodep, int size)
 
   // Since we know the number of blocks will decrease we can free up the last block and mark that
   // slot as unused.
-  free_block(last_childp->blocks[last_child_used_blocks - 1]);
+  block_free(last_childp->blocks[last_child_used_blocks - 1]);
   last_childp->blocks[last_child_used_blocks - 1] = -1;
 
   // We must calculate carefully the decreased size and use it to further compute the remaining
@@ -243,12 +243,12 @@ int shrink_inode(inode_t *nodep, int size)
   if (nodep->next >= 0 && last_childp->size == 0)
   {
     inode_t *second_to_last_childp = inode_second_to_last_child(nodep);
-    free_inode(second_to_last_childp->next);
+    inode_free(second_to_last_childp->next);
     second_to_last_childp->next = -1;
   }
 
   // Shrink any remaining size change that is needed.
-  shrink_inode(nodep, remaining_size_change);
+  inode_strink(nodep, remaining_size_change);
 
   return size;
 }
@@ -273,5 +273,5 @@ int inode_get_bnum(inode_t *nodep, int file_bnum)
   }
 
   // Recursively look into the child.
-  return inode_get_bnum(get_inode(nodep->next), file_bnum - INODE_LOCAL_BLOCK_CAP);
+  return inode_get_bnum(inode_get(nodep->next), file_bnum - INODE_LOCAL_BLOCK_CAP);
 }

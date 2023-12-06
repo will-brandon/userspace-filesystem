@@ -10,6 +10,7 @@
 
 void storage_init(const char *path);
 void storage_deinit(void);
+void storage_clear(void);
 int storage_access(const char *path, int mode);
 int storage_stat(const char *path, struct stat *st);
 int storage_read(const char *path, char *buf, size_t size, off_t offset);

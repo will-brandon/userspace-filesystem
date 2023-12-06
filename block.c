@@ -1,5 +1,5 @@
 /**
- * @file blocks.c
+ * @file block.c
  * @author CS3650 staff
  *
  * Implementatino of a block-based abstraction over a disk image file.
@@ -20,7 +20,7 @@
 
 #include "specs.h"
 #include "bitmap.h"
-#include "blocks.h"
+#include "block.h"
 
 static int blocks_fd = -1;
 static void *blocks_base = 0;
@@ -38,7 +38,7 @@ int bytes_to_blocks(int bytes)
 }
 
 // Load and initialize the given disk image.
-void blocks_init(const char *image_path)
+void block_init(const char *image_path)
 {
   blocks_fd = open(image_path, O_CREAT | O_RDWR, 0644);
   assert(blocks_fd != -1);
@@ -53,7 +53,7 @@ void blocks_init(const char *image_path)
   assert(blocks_base != MAP_FAILED);
 
   // block 0 stores the block bitmap and the inode bitmap
-  void *bbm = get_blocks_bitmap();
+  void *bbm = block_block_bitmap_start();
 
   // Mark both blocks as occupied
   bitmap_put(bbm, 0, 1);
@@ -61,18 +61,19 @@ void blocks_init(const char *image_path)
 }
 
 // Close the disk image.
-void blocks_free(void)
+void block_deinit(void)
 {
   int rv = munmap(blocks_base, NUFS_SIZE);
   assert(rv == 0);
 }
 
-void blocks_clear(void)
+void block_clear(void)
 {
+  // Memory clear everything.
   memset(blocks_base, 0, NUFS_SIZE);
 
   // block 0 stores the block bitmap and the inode bitmap
-  void *bbm = get_blocks_bitmap();
+  void *bbm = block_block_bitmap_start();
 
   // Mark both blocks as occupied
   bitmap_put(bbm, 0, 1);
@@ -80,44 +81,43 @@ void blocks_clear(void)
 }
 
 // Get the given block, returning a pointer to its start.
-void *blocks_get_block(int bnum)
+void *block_get(int bnum)
 {
   return blocks_base + (BLOCK_SIZE * bnum);
 }
 
 // Return a pointer to the beginning of the block bitmap.
 // The size is BLOCK_BITMAP_SIZE bytes.
-void *get_blocks_bitmap(void)
+void *block_block_bitmap_start(void)
 {
-  return blocks_get_block(0);
+  return block_get(0);
 }
 
 // Return a pointer to the beginning of the inode table bitmap.
-void *get_inode_bitmap(void)
+void *block_inode_bitmap_start(void)
 {
   // The inode bitmap is stored immediately after the block bitmap
-  return get_blocks_bitmap() + BLOCK_BITMAP_SIZE;
+  return block_block_bitmap_start() + BLOCK_BITMAP_SIZE;
 }
 
-void *get_inode_start(void)
+void *block_inode_start(void)
 {
-  return get_inode_bitmap() + INODE_BITMAP_SIZE;
+  return block_inode_bitmap_start() + INODE_BITMAP_SIZE;
 }
 
-void *get_content_start(void)
+void *block_content_start(void)
 {
-  return blocks_get_block(0) + BLOCK_SIZE * RESERVED_BLOCKS;
+  return block_get(0) + BLOCK_SIZE * RESERVED_BLOCKS;
 }
 
 // Allocate a new block and return its index.
-int alloc_block(void)
+int block_alloc(void)
 {
-  void *bbm = get_blocks_bitmap();
+  void *bbm = block_block_bitmap_start();
 
   for (int ii = RESERVED_BLOCKS; ii < BLOCK_COUNT; ++ii) {
     if (!bitmap_get(bbm, ii)) {
       bitmap_put(bbm, ii, 1);
-      printf("+ alloc_block() -> %d\n", ii);
       return ii;
     }
   }
@@ -126,9 +126,8 @@ int alloc_block(void)
 }
 
 // Deallocate the block with the given index.
-void free_block(int bnum)
+void block_free(int bnum)
 {
-  printf("+ free_block(%d)\n", bnum);
-  void *bbm = get_blocks_bitmap();
+  void *bbm = block_block_bitmap_start();
   bitmap_put(bbm, bnum, 0);
 }

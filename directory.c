@@ -11,7 +11,7 @@ void directory_init(int inum)
   assert(inum >= 0);
   assert(inode_exists(inum));
 
-  inode_t *dnodep = get_inode(inum);
+  inode_t *dnodep = inode_get(inum);
   dnodep->mode = dnodep->mode & ~INODE_FILE | INODE_DIR;
 
   directory_add_entry(inum, ".", inum, FALSE);
@@ -55,7 +55,7 @@ dirent_t *directory_get_entry(inode_t *dnodep, int entry_num)
   int entry_offset = (sizeof(dirent_t) * entry_num) % BLOCK_SIZE;
   int bnum = inode_get_bnum(dnodep, entry_block);
 
-  return blocks_get_block(bnum) + entry_offset;
+  return block_get(bnum) + entry_offset;
 }
 
 int directory_lookup_entry_num(inode_t *dnodep, const char *name)
@@ -65,7 +65,7 @@ int directory_lookup_entry_num(inode_t *dnodep, const char *name)
   assert(name);
 
   // If the name is too long immediately rule it out.
-  if (strlen(name) > DIR_NAME_LENGTH - 1)
+  if (strlen(name) > MAX_DIR_ENTRY_NAME_LEN - 1)
   {
     return -ENOENT;
   }
@@ -112,7 +112,7 @@ int directory_rename_entry(inode_t *dnodep, int entry_num, const char *name)
   assert(name);
 
   // Ensure the name is not too long.
-  if (strlen(name) >= DIR_NAME_LENGTH)
+  if (strlen(name) >= MAX_DIR_ENTRY_NAME_LEN)
   {
     return -ENAMETOOLONG;
   }
@@ -136,7 +136,7 @@ int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t upda
   assert(dinum >= 0);
   assert(inode_exists(dinum));
   
-  inode_t *dnodep = get_inode(dinum);
+  inode_t *dnodep = inode_get(dinum);
 
   assert(dnodep->mode & INODE_DIR);
   assert(name);
@@ -144,7 +144,7 @@ int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t upda
   assert(inode_exists(entry_inum));
 
   // Ensure the name is not too long.
-  if (strlen(name) >= DIR_NAME_LENGTH)
+  if (strlen(name) >= MAX_DIR_ENTRY_NAME_LEN)
   {
     return -ENAMETOOLONG;
   }
@@ -175,7 +175,7 @@ int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t upda
   {
     // Since no open entry exists, create a new one and grow the inode. If the inode returns -ENOSPC
     // indicating that the disk is full, return -ENOSPC immediately.
-    if (grow_inode(dnodep, sizeof(dirent_t)) < 0)
+    if (inode_grow(dnodep, sizeof(dirent_t)) < 0)
     {
       return -ENOSPC;
     }
@@ -189,7 +189,7 @@ int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t upda
 
   if (update_child)
   {
-    inode_t *entry_nodep = get_inode(entry_inum);
+    inode_t *entry_nodep = inode_get(entry_inum);
 
     entry_nodep->refs += 1;
 
@@ -219,7 +219,7 @@ int directory_delete(inode_t *dnodep, const char *name, bool_t update_child)
 
     if (!strcmp(name, entryp->name))
     {
-      entry_nodep = get_inode(entryp->inum);
+      entry_nodep = inode_get(entryp->inum);
 
       entryp->inum = -1;
 
@@ -298,7 +298,7 @@ void directory_print_leveled_tree(inode_t *dnodep, int level)
     repeat_print("  ", level);
     printf("%s\n", entryp->name);
 
-    subnodep = get_inode(entryp->inum);
+    subnodep = inode_get(entryp->inum);
 
     if (subnodep->mode & INODE_DIR)
     {

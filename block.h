@@ -1,13 +1,13 @@
 /**
- * @file blocks.h
+ * @file block.h
  * @author CS3650 staff
  *
  * A block-based abstraction over a disk image file.
  *
  * The disk image is mmapped, so block data is accessed using pointers.
  */
-#ifndef _BLOCKS_H
-#define _BLOCKS_H
+#ifndef _BLOCK_H
+#define _BLOCK_H
 
 #include <stdio.h>
 
@@ -25,17 +25,17 @@ int bytes_to_blocks(int bytes);
  *
  * @param image_path Path to the disk image file.
  */
-void blocks_init(const char *image_path);
+void block_init(const char *image_path);
 
 /**
  * Close the disk image.
  */
-void blocks_free(void);
+void block_deinit(void);
 
 /**
  * Clears all blocks but still keeps the first RESERVED_BLOCKS blocks reserved.
  */
-void blocks_clear(void);
+void block_clear(void);
 
 /**
  * Get the block with the given index, returning a pointer to its start.
@@ -44,25 +44,25 @@ void blocks_clear(void);
  *
  * @return Pointer to the beginning of the block in memory.
  */
-void *blocks_get_block(int bnum);
+void *block_get(int bnum);
 
 /**
  * Return a pointer to the beginning of the block bitmap.
  *
  * @return A pointer to the beginning of the free blocks bitmap.
  */
-void *get_blocks_bitmap(void);
+void *block_block_bitmap_start(void);
 
 /**
  * Return a pointer to the beginning of the inode table bitmap.
  *
  * @return A pointer to the beginning of the free inode bitmap.
  */
-void *get_inode_bitmap(void);
+void *block_inode_bitmap_start(void);
 
-void *get_inode_start(void);
+void *block_inode_start(void);
 
-void *get_content_start(void);
+void *block_content_start(void);
 
 /**
  * Allocate a new block and return its number.
@@ -71,13 +71,13 @@ void *get_content_start(void);
  *
  * @return The index of the newly allocated block.
  */
-int alloc_block(void);
+int block_alloc(void);
 
 /**
  * Deallocate the block with the given number.
  *
  * @param bnun The block number to deallocate.
  */
-void free_block(int bnum);
+void block_free(int bnum);
 
 #endif

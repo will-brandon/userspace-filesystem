@@ -23,7 +23,7 @@ int nufs_access(const char *path, int mode)
   {
     return -EINVAL;
   }
-  
+
   return storage_access(path, mode);
 }
 
@@ -35,6 +35,7 @@ int nufs_getattr(const char *path, struct stat *stp)
   // Ensure the path and stat pointer are not null.
   if (!path || !stp)
   {
+    
     return -EINVAL;
   }
 
@@ -46,8 +47,8 @@ int nufs_getattr(const char *path, struct stat *stp)
 int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                  off_t offset, struct fuse_file_info *fi)
 {
-  // Ensure the path is not null.
-  if (!path)
+  // Ensure the path and filler function pointer are not null.
+  if (!path || !filler)
   {
     return -EINVAL;
   }
@@ -63,10 +64,6 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   {
     return rv;
   }
-
-  printf("%s: [", path);
-  slist_print(names, ", ");
-  printf("]\n");
 
   // If the directory is empty, return immediately.
   if (!names)
@@ -87,8 +84,6 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
       return rv;
     }
 
-    printf("NAME: %s\n", name_item->data);
-
     filler(buf, name_item->data, &st, 0);
 
     name_item = name_item->next;
@@ -104,9 +99,13 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 // function.
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev)
 {
-  int rv = -1;
-  printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
-  return rv;
+  // Ensure the path is not null.
+  if (!path)
+  {
+    return -EINVAL;
+  }
+
+  return storage_mknod(path, mode);
 }
 
 // most of the following callbacks implement
