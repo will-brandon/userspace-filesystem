@@ -49,10 +49,17 @@ void print_inode_chain(inode_t *nodep)
   }
 }
 
+bool_t inode_exists(int inum)
+{
+  assert(inum >= 0);
+
+  return bitmap_get(get_inode_bitmap(), inum);
+}
+
 inode_t *get_inode(int inum)
 {
   assert(inum < MAX_INODE_COUNT);
-  assert(bitmap_get(get_inode_bitmap(), inum));
+  assert(inode_exists(inum));
 
   // Return the proper inode at the given offset.
   return get_inode_start() + (sizeof(inode_t) * inum);
@@ -131,7 +138,7 @@ int alloc_inode(void)
 int free_inode(int inum)
 {
   assert(inum < MAX_INODE_COUNT);
-  assert(bitmap_get(get_inode_bitmap(), inum));
+  assert(inode_exists(inum));
 
   // Set the inode to unused.
   bitmap_put(get_inode_bitmap(), inum, 0);

@@ -9,7 +9,7 @@
 void directory_init(int inum)
 {
   assert(inum >= 0);
-  assert(bitmap_get(get_inode_bitmap(), inum));
+  assert(inode_exists(inum));
 
   inode_t *dnodep = get_inode(inum);
   dnodep->mode = dnodep->mode & ~INODE_FILE | INODE_DIR;
@@ -84,14 +84,14 @@ int directory_lookup(inode_t *dnodep, const char *name)
 int directory_put(int dinum, const char *name, int entry_inum, bool_t update_child)
 {
   assert(dinum >= 0);
-  assert(bitmap_get(get_inode_bitmap(), dinum));
+  assert(inode_exists(dinum));
   
   inode_t *dnodep = get_inode(dinum);
 
   assert(dnodep->mode & INODE_DIR);
   assert(name);
   assert(entry_inum >= 0);
-  assert(bitmap_get(get_inode_bitmap(), entry_inum));
+  assert(inode_exists(entry_inum));
   
   dirent_t *entryp;
   int entry_count = directory_entry_count(dnodep);

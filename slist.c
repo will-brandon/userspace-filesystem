@@ -60,6 +60,16 @@ slist_t *slist_explode(const char *text, char delim)
   return slist_cons(part, rest);
 }
 
+int slist_size(slist_t *xs)
+{
+  if (!xs)
+  {
+    return 0;
+  }
+
+  return 1 + slist_size(xs->next);
+}
+
 void slist_print(slist_t *xs, const char *delim)
 {
   if (xs == NULL)

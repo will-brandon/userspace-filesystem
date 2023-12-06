@@ -12,10 +12,11 @@
 
 static inode_t *root_nodep;
 
-int inode_for_path_comps_in(inode_t *dnodep, slist_t *comps)
+int inode_for_path_comps_in(int dinum, slist_t *comps)
 {
-  assert(dnodep);
-  assert(dnodep->mode & INODE_DIR);
+  assert(dinum >= 0);
+  assert(bitmap_get(get_inode_bitmap(), dinum));
+  assert(get_inode(dinum)->mode & INODE_DIR);
 
   // If the components are null return no such file error.
   if (!comps)
@@ -29,7 +30,12 @@ int inode_for_path_comps_in(inode_t *dnodep, slist_t *comps)
   // If the string is empty, i.e. double slash, ignore it and move on to the next token.
   if (!strcmp(comps->data, ""))
   {
-    return inode_for_path_comps_in(dnodep, comps->next);
+    if (comps->next)
+    {
+      return inode_for_path_comps_in(dnodep, comps->next);
+    }
+
+    return 
   }
 
   int entry_inum;
@@ -59,19 +65,22 @@ int inode_for_path_comps_in(inode_t *dnodep, slist_t *comps)
   return inode_for_path_comps_in(entry_dnodep, comps->next);
 }
 
-int inode_for_path_in(inode_t *dnodep, const char *path)
+int inode_for_path_in(int dinum, const char *path)
 {
-  assert(dnodep);
-  assert(dnodep->mode & INODE_DIR);
+  assert(dinum >= 0);
+  assert(bitmap_get(get_inode_bitmap(), dinum));
+  assert(get_inode(dinum)->mode & INODE_DIR);
   assert(path);
 
   // Split the path string into components and delegate to the list version of this function.
   slist_t *path_components = slist_explode(path, '/');
 
+  printf("SIZE: %d\n", slist_size(path_components));
+  printf("[");
   slist_print(path_components, ", ");
-  printf("\n");
+  printf("]\n");
 
-  int inum = inode_for_path_comps_in(dnodep, path_components);
+  int inum = inode_for_path_comps_in(dinum, path_components);
 
   slist_free(path_components);
 
@@ -83,7 +92,7 @@ int inode_for_path(const char *path)
   assert(path);
 
   // Start from the root.
-  return inode_for_path_in(root_nodep, path);
+  return inode_for_path_in(ROOT_INUM, path);
 }
 
 void storage_init(const char *path)

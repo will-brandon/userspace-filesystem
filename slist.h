@@ -44,6 +44,8 @@ void slist_free(slist_t *xs);
  */
 slist_t *slist_explode(const char *text, char delim);
 
+int slist_size(slist_t *xs);
+
 void slist_print(slist_t *xs, const char *delim);
 
 #endif
