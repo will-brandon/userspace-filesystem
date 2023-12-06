@@ -15,8 +15,12 @@ static inode_t *root_nodep;
 int inode_for_path_comps_in(int dinum, slist_t *comps)
 {
   assert(dinum >= 0);
-  assert(bitmap_get(get_inode_bitmap(), dinum));
-  assert(get_inode(dinum)->mode & INODE_DIR);
+  assert(inode_exists(dinum));
+
+  // Get the node.
+  inode_t *dnodep = get_inode(dinum);
+
+  assert(dnodep->mode & INODE_DIR);
 
   // If the components are null return no such file error.
   if (!comps)
@@ -27,48 +31,41 @@ int inode_for_path_comps_in(int dinum, slist_t *comps)
   // Ensure the data is not null.
   assert(comps->data);
 
-  // If the string is empty, i.e. double slash, ignore it and move on to the next token.
+  // If the string is empty and the next token exists, i.e. double slash, ignore it and move on to
+  // the next token. But, if the string is empty and there is no next token, return the parent dir.
   if (!strcmp(comps->data, ""))
   {
     if (comps->next)
     {
-      return inode_for_path_comps_in(dnodep, comps->next);
+      return inode_for_path_comps_in(dinum, comps->next);
     }
 
-    return 
+    return dinum;
   }
 
   int entry_inum;
 
-  // Lookip the inode in the directory. If it is an error, return this error.
-  if ((entry_inum = directory_lookup(dnodep, comps->data)) < 0)
+  // Lookup the inode in the directory. If it is an error, we can conveniently return this error
+  // code. If the lookup succeeded and this is the end of the path, return the entry.
+  if ((entry_inum = directory_lookup(dnodep, comps->data)) < 0 || !comps->next)
   {
     return entry_inum;
   }
 
-  // If this is the end of the path, return the entry.
-  if (!comps->next)
-  {
-    return entry_inum;
-  }
-
-  // Get the entry node.
-  inode_t *entry_dnodep = get_inode(entry_inum);
-
-  // We ensure the node is a directory since there is more path coming.
-  if (!(entry_dnodep->mode & INODE_DIR))
+  // We ensure the entry node is a directory since there is more path coming.
+  if (!(get_inode(entry_inum)->mode & INODE_DIR))
   {
     return -ENOTDIR;
   }
 
   // Continue on down the path looking in that directory.
-  return inode_for_path_comps_in(entry_dnodep, comps->next);
+  return inode_for_path_comps_in(entry_inum, comps->next);
 }
 
 int inode_for_path_in(int dinum, const char *path)
 {
   assert(dinum >= 0);
-  assert(bitmap_get(get_inode_bitmap(), dinum));
+  assert(inode_exists(dinum));
   assert(get_inode(dinum)->mode & INODE_DIR);
   assert(path);
 
@@ -81,7 +78,6 @@ int inode_for_path_in(int dinum, const char *path)
   printf("]\n");
 
   int inum = inode_for_path_comps_in(dinum, path_components);
-
   slist_free(path_components);
 
   return inum;
@@ -150,9 +146,7 @@ void storage_init(const char *path)
   directory_put(inums[6], "hw3.pdf", inums[15], TRUE);
   directory_put(inums[6], "01234567890123456789012345678901234567890123456789012345678this will all be truncated", inums[8], TRUE);
 
-  int entry_inum = inode_for_path("/");
-
-  printf("%d\n", entry_inum);
+  printf("%d\n", inode_for_path("README.md/"));
 }
 
 void storage_deinit(void)

@@ -7,6 +7,7 @@
  * This might be useful for directory listings and for manipulating paths.
  */
 
+#include <assert.h>
 #include <alloca.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,13 +36,16 @@ void slist_free(slist_t *xs)
 
 slist_t *slist_explode(const char *text, char delim)
 {
-  if (*text == 0)
+  assert(text);
+
+  // If the character is string null terminator return NULL.
+  if (*text == '\0')
   {
-    return 0;
+    return NULL;
   }
 
   int plen = 0;
-  while (text[plen] != 0 && text[plen] != delim)
+  while (text[plen] != '\0' && text[plen] != delim)
   {
     plen += 1;
   }

@@ -3,6 +3,8 @@
 #ifndef _INODE_H
 #define _INODE_H
 
+#include "util.h"
+
 #define INODE_FILE 0100000
 #define INODE_DIR  0040000
 
