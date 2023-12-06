@@ -76,8 +76,8 @@ int directory_lookup(inode_t *dnodep, const char *name)
     }
   }
 
-  // Return -1 to indicate if no directory entry was found.
-  return -1;
+  // Return -ENOENT to indicate if no directory entry was found.
+  return -ENOENT;
 }
 
 // Check for same name existing

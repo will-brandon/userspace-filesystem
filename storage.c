@@ -1,4 +1,6 @@
+#include <errno.h>
 #include <assert.h>
+#include <string.h>
 #include "util.h"
 #include "specs.h"
 #include "storage.h"
@@ -10,11 +12,55 @@
 
 static inode_t *root_nodep;
 
-int inode_for_path(const char *path)
+int inode_for_path_comps(inode_t *dnodep, slist_t *comps)
 {
+  assert(dnodep);
+  assert(dnodep->mode & INODE_DIR);
+
+  // If the components are null return no such file error.
+  if (!comps)
+  {
+    return -ENOENT;
+  }
+
+  // Ensure the data is not null.
+  assert(comps->data);
+
+  // If the string is empty, i.e. double slash, ignore it and move on to the next token.
+  if (!strcmp(comps->data, ""))
+  {
+    return inode_for_path_comps(dnodep, comps->next);
+  }
+
+  int entry_inum;
+
+  // Lookip the inode in the directory. If it is an error, return this error.
+  if ((entry_inum = directory_lookup(comps->data, dnodep)) < 0)
+  {
+    return entry_inum;
+  }
+
+  inode_t *entry_dnodep = get_inode(entry_inum);
+
+  // Ensure that if there is more path coming, we ensure the node is a directory.
+  if (comps->next && !(entry_dnodep->mode & INODE_DIR))
+  {
+    return -ENOTDIR;
+  }
+
+  // Continue on down the path looking in that directory.
+  return inode_for_path_comps(entry_dnodep, comps->next);
+}
+
+int inode_for_path(inode_t *dnodep, const char *path)
+{
+  assert(dnodep);
+  assert(dnodep->mode & INODE_DIR);
   assert(path);
 
-  
+  // Split the path string into components and delegate to the list version of this function.
+  slist_t *path_components = slist_explode(path, '/');
+  return inode_for_path_comps(path_components);
 }
 
 void storage_init(const char *path)
