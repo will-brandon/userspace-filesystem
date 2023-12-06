@@ -149,7 +149,17 @@ void storage_init(const char *path)
   directory_add_entry(inums[6], "hw3.pdf", inums[15], TRUE);
   directory_add_entry(inums[6], "01234567890123456789012345678901234567890123456789012345678this will all be truncated", inums[8], TRUE);
 
-  directory_print_tree(root_nodep);
+  printf("%d\n", directory_delete(inodes[6], "hw2.pdf", TRUE));
+
+  directory_print(root_nodep, TRUE);
+  directory_print(inodes[0], TRUE);
+  directory_print(inodes[2], TRUE);
+  directory_print(inodes[4], TRUE);
+  directory_print(inodes[6], TRUE);
+  directory_print(inodes[8], TRUE);
+  directory_print(inodes[10], TRUE);
+  directory_print(inodes[12], TRUE);
+  directory_print(inodes[14], TRUE);
   
   /*
   int new_file_count = 15;
