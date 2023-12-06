@@ -17,7 +17,7 @@
 // these nodes.
 typedef struct inode
 {
-  int refs;                          // reference count (we will leave this at 1)
+  int refs;                          // reference/link count
   int mode;                          // permission & type
   int size;                          // bytes
   int blocks[INODE_LOCAL_BLOCK_CAP]; // <0 if unused, otherwise points to a block

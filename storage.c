@@ -269,10 +269,30 @@ int storage_mknod(const char *path, int mode)
 
 int storage_link(const char *from, const char *to)
 {
+  assert(from);
+  assert(to);
+
+  // Get the inum of the inode at the "from" path.
+  int inum = inum_for_path(from);
+
+  // Ensure the inode at the "from" path exists.
+  if (inum < 0)
+  {
+    return -ENOENT;
+  }
+
+  // Ensure the inode at the "to" path does not already exist.
+  if (inum_for_path(to) >= 0)
+  {
+    return -EEXIST;
+  }
+
+  
 }
 
 int storage_unlink(const char *path)
 {
+  assert(path);
 }
 
 int storage_rename(const char *from, const char *to)
@@ -319,10 +339,6 @@ int storage_read(const char *path, char *buf, size_t size, off_t offset)
 }
 
 int storage_write(const char *path, const char *buf, size_t size, off_t offset)
-{
-}
-
-int storage_set_time(const char *path, const struct timespec ts[2])
 {
 }
 

@@ -20,7 +20,6 @@ int storage_rename(const char *from, const char *to);
 int storage_truncate(const char *path, off_t size);
 int storage_read(const char *path, char *buf, size_t size, off_t offset);
 int storage_write(const char *path, const char *buf, size_t size, off_t offset);
-int storage_set_time(const char *path, const struct timespec ts[2]);
 int storage_list(const char *dpath, slist_t **namesp);
 
 #endif

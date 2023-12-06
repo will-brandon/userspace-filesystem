@@ -131,7 +131,7 @@ int directory_rename_entry(inode_t *dnodep, int entry_num, const char *name)
   return entry_num;
 }
 
-int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t update_child)
+int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t back_entry_in_child)
 {
   assert(dinum >= 0);
   assert(inode_exists(dinum));
@@ -187,24 +187,17 @@ int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t upda
   entryp->inum = entry_inum;
   directory_rename_entry(dnodep, entry_num, name);
 
-  if (update_child)
+  // Put an entry for .. in the child if it is a directory and this option is requested.
+  if (back_entry_in_child && inode_get(entry_inum)->mode & INODE_DIR)
   {
-    inode_t *entry_nodep = inode_get(entry_inum);
-
-    entry_nodep->refs += 1;
-
-    // Put an entry for .. in the child.
-    if (entry_nodep->mode & INODE_DIR)
-    {
-      directory_add_entry(entry_inum, "..", dinum, FALSE);
-    }
+    directory_add_entry(entry_inum, "..", dinum, FALSE);
   }
 
   // Return the directory entry index.
   return entry_num;
 }
 
-int directory_delete(inode_t *dnodep, const char *name, bool_t update_child)
+int directory_delete(inode_t *dnodep, const char *name, bool_t back_entry_in_child)
 {
   assert(dnodep);
   assert(dnodep->mode & INODE_DIR);
@@ -223,14 +216,10 @@ int directory_delete(inode_t *dnodep, const char *name, bool_t update_child)
 
       entryp->inum = -1;
 
-      if (update_child)
+      // Remove the entry for .. in the child if it is a directory and this option is requested.
+      if (back_entry_in_child && entry_nodep->mode & INODE_DIR)
       {
-        entry_nodep->refs -= 1;
-
-        if (entry_nodep->mode & INODE_DIR)
-        {
-          directory_delete(entry_nodep, "..", FALSE);
-        }
+        directory_delete(entry_nodep, "..", FALSE);
       }
 
       return entry_num;
