@@ -204,7 +204,7 @@ int inode_grow(inode_t *nodep, int size)
   return size;
 }
 
-int inode_strink(inode_t *nodep, int size)
+int inode_shrink(inode_t *nodep, int size)
 {
   assert(nodep);
 
@@ -248,7 +248,7 @@ int inode_strink(inode_t *nodep, int size)
   }
 
   // Shrink any remaining size change that is needed.
-  inode_strink(nodep, remaining_size_change);
+  inode_shrink(nodep, remaining_size_change);
 
   return size;
 }

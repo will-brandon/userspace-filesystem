@@ -271,12 +271,24 @@ int storage_truncate(const char *path, off_t size)
     return inum;
   }
 
-  
-
-  // Get a pointer to the inode.
+  // Get a pointer to the inode and determine its current size.
   inode_t *nodep = inode_get(inum);
+  int size_delta = size - inode_total_size(nodep);
+  int rv;
 
-  return 0;
+  // Grow the inode if the delta > 0.
+  if (size_delta > 0)
+  {
+    rv = inode_grow(nodep, size_delta);
+  }
+  // Shrink the inode if the delta < 0.
+  else if (size_delta < 0)
+  {
+    rv = inode_shrink(nodep, -size_delta);
+  }
+
+  // If an error occured return the error code. Otherise return 0 indicating success.
+  return rv < 0 ? rv : 0;
 }
 
 int storage_mknod(const char *path, int mode)
