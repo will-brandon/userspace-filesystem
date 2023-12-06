@@ -42,6 +42,90 @@ int nufs_getattr(const char *path, struct stat *stp)
   return storage_stat(path, stp);
 }
 
+// mknod makes a filesystem object like a file or directory
+// called for: man 2 open, man 2 link
+// Note, for this assignment, you can alternatively implement the create
+// function.
+int nufs_mknod(const char *path, mode_t mode, dev_t rdev)
+{
+  // Ensure the path is not null.
+  if (!path)
+  {
+    return -EINVAL;
+  }
+
+  return storage_mknod(path, mode);
+}
+
+int nufs_link(const char *from, const char *to)
+{
+  int rv = -1;
+  printf("link(%s => %s) -> %d\n", from, to, rv);
+  return rv;
+}
+
+int nufs_unlink(const char *path)
+{
+  int rv = -1;
+  printf("unlink(%s) -> %d\n", path, rv);
+  return rv;
+}
+
+// implements: man 2 rename
+// called to move a file within the same filesystem
+int nufs_rename(const char *from, const char *to)
+{
+  int rv = -1;
+  printf("rename(%s => %s) -> %d\n", from, to, rv);
+  return rv;
+}
+
+int nufs_truncate(const char *path, off_t size)
+{
+  // Ensure the path is not null and size is at lest 0.
+  if (!path || size < 0)
+  {
+    return -EINVAL;
+  }
+
+  return storage_truncate(path, size);
+}
+
+// Actually read data
+int nufs_read(const char *path, char *buf, size_t size, off_t offset,
+              struct fuse_file_info *fi)
+{
+  int rv = 6;
+  strcpy(buf, "hello\n");
+  printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
+  return rv;
+}
+
+// Actually write data
+int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
+               struct fuse_file_info *fi)
+{
+  int rv = -1;
+  printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
+  return rv;
+}
+
+// most of the following callbacks implement
+// another system call; see section 2 of the manual
+int nufs_mkdir(const char *path, mode_t mode)
+{
+  int rv = nufs_mknod(path, mode | 040000, 0);
+  printf("mkdir(%s) -> %d\n", path, rv);
+  return rv;
+}
+
+int nufs_rmdir(const char *path)
+{
+  int rv = -1;
+  printf("rmdir(%s) -> %d\n", path, rv);
+  return rv;
+}
+
 // implementation for: man 2 readdir
 // lists the contents of a directory
 int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
@@ -93,77 +177,11 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   return 0;
 }
 
-// mknod makes a filesystem object like a file or directory
-// called for: man 2 open, man 2 link
-// Note, for this assignment, you can alternatively implement the create
-// function.
-int nufs_mknod(const char *path, mode_t mode, dev_t rdev)
-{
-  // Ensure the path is not null.
-  if (!path)
-  {
-    return -EINVAL;
-  }
-
-  return storage_mknod(path, mode);
-}
-
-// most of the following callbacks implement
-// another system call; see section 2 of the manual
-int nufs_mkdir(const char *path, mode_t mode)
-{
-  int rv = nufs_mknod(path, mode | 040000, 0);
-  printf("mkdir(%s) -> %d\n", path, rv);
-  return rv;
-}
-
-// UNLINK BECOMES DELETE
-int nufs_unlink(const char *path)
-{
-  int rv = -1;
-  printf("unlink(%s) -> %d\n", path, rv);
-  return rv;
-}
-
-int nufs_link(const char *from, const char *to)
-{
-  int rv = -1;
-  printf("link(%s => %s) -> %d\n", from, to, rv);
-  return rv;
-}
-
-int nufs_rmdir(const char *path)
-{
-  int rv = -1;
-  printf("rmdir(%s) -> %d\n", path, rv);
-  return rv;
-}
-
-// implements: man 2 rename
-// called to move a file within the same filesystem
-int nufs_rename(const char *from, const char *to)
-{
-  int rv = -1;
-  printf("rename(%s => %s) -> %d\n", from, to, rv);
-  return rv;
-}
-
 int nufs_chmod(const char *path, mode_t mode)
 {
   int rv = -1;
   printf("chmod(%s, %04o) -> %d\n", path, mode, rv);
   return rv;
-}
-
-int nufs_truncate(const char *path, off_t size)
-{
-  // Ensure the path is not null and size is at lest 0.
-  if (!path || size < 0)
-  {
-    return -EINVAL;
-  }
-
-  return storage_truncate(path, size);
 }
 
 // This is called on open, but doesn't need to do much
@@ -174,25 +192,6 @@ int nufs_open(const char *path, struct fuse_file_info *fi)
 {
   int rv = 0;
   printf("open(%s) -> %d\n", path, rv);
-  return rv;
-}
-
-// Actually read data
-int nufs_read(const char *path, char *buf, size_t size, off_t offset,
-              struct fuse_file_info *fi)
-{
-  int rv = 6;
-  strcpy(buf, "hello\n");
-  printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
-  return rv;
-}
-
-// Actually write data
-int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
-               struct fuse_file_info *fi)
-{
-  int rv = -1;
-  printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
   return rv;
 }
 
@@ -226,11 +225,11 @@ void nufs_init_ops(struct fuse_operations *ops)
   ops->link = nufs_link;
   ops->unlink = nufs_unlink;
   ops->rename = nufs_rename;
-  ops->rmdir = nufs_rmdir;
-  ops->mkdir = nufs_mkdir;
   ops->truncate = nufs_truncate;
   ops->read = nufs_read;
   ops->write = nufs_write;
+  ops->mkdir = nufs_mkdir;
+  ops->rmdir = nufs_rmdir;
   ops->readdir = nufs_readdir;
 
   // ops->create   = nufs_create; // alternative to mknod
