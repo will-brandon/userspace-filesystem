@@ -21,6 +21,9 @@ void storage_init(const char *path)
   // Create a memory map and initialize the disk blocks and.
   blocks_init(path);
 
+  printf("\033[0;1;31mREMEMBER TO REMOVE THIS CLEAR FUNCTION DUMBASS!\033[0m\n");
+  blocks_clear();
+
   // Allocate the root inode and make it a directory if it doesn't already exist. Note that this
   // relies on ROOT_INUM being 0. Otherwise, there is no guarantee ROOT_INUM will be allocated.
   if (!bitmap_get(get_inode_bitmap(), ROOT_INUM))
@@ -32,9 +35,7 @@ void storage_init(const char *path)
   // Initialize a pointer to the root node structure.
   root_nodep = get_inode(ROOT_INUM);
 
-  blocks_clear();
-
-  #define INODES 15
+  #define INODES 16
 
   int inums[INODES];
   inode_t *inodes[INODES];
@@ -43,27 +44,34 @@ void storage_init(const char *path)
   {
     inums[i] = alloc_inode();
     inodes[i] = get_inode(inums[i]);
-
+    
     if (i % 2 == 0)
     {
       directory_init(inums[i]);
     }
   }
-
+  
+  directory_put(ROOT_INUM, "code", inums[0], TRUE);
+  directory_put(ROOT_INUM, "school stuff", inums[2], TRUE);
+  directory_put(ROOT_INUM, "README.md", inums[1], TRUE);
+  
   directory_put(inums[0], "main.c", inums[1], TRUE);
-  directory_put(inums[0], "main.o", inums[3], TRUE);
-  directory_put(inums[0], "hello.txt", inums[5], TRUE);
-  directory_put(inums[0], "README.md", inums[7], TRUE);
-  directory_put(inums[0], "my stuff", inums[2], TRUE);
-  directory_put(inums[2], "empty dir", inums[4], TRUE);
+  directory_put(inums[0], "util.h", inums[3], TRUE);
+  directory_put(inums[0], "util.c", inums[5], TRUE);
+  directory_put(inums[0], "Makefile", inums[7], TRUE);
+
+  directory_put(inums[2], "CS4100", inums[4], TRUE);
+  directory_put(inums[2], "DS4400", inums[6], TRUE);
   directory_put(inums[2], "resume.pdf", inums[9], TRUE);
 
-  print_directory(inodes[0], TRUE);
-  directory_delete(inodes[0], "hello.txt", TRUE);
-  directory_put(inums[0], "a.txt", inums[11], TRUE);
-  print_directory(inodes[0], TRUE);
-  print_directory(inodes[2], TRUE);
-  print_directory(inodes[4], TRUE);
+  directory_put(inums[6], "hw1.pdf", inums[11], TRUE);
+  directory_put(inums[6], "hw2.pdf", inums[13], TRUE);
+  directory_put(inums[6], "hw3.pdf", inums[15], TRUE);
+  directory_put(inums[6], "01234567890123456789012345678901234567890123456789012345678this will all be truncated", inums[8], TRUE);
+
+  slist_t *dlist = directory_list(inodes[6]);
+  slist_print(dlist, "\n");
+  printf("\n");
 }
 
 void storage_deinit(void)

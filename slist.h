@@ -9,9 +9,9 @@
 #ifndef _SLIST_H
 #define _SLIST_H
 
-typedef struct slist {
+typedef struct slist
+{
   char *data;
-  int refs;
   struct slist *next;
 } slist_t;
 
@@ -43,5 +43,7 @@ void slist_free(slist_t *xs);
  * @return a list containing all the substrings
  */
 slist_t *slist_explode(const char *text, char delim);
+
+void slist_print(slist_t *xs, const char *delim);
 
 #endif

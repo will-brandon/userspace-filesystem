@@ -51,8 +51,8 @@ size_t directory_rename(dirent_t *entryp, const char *name)
   size_t copy_size = MIN(name_len, DIR_NAME_LENGTH - 1);
 
   // Copy the name into the buffer and ensure a null terminator is included.
-  memcpy(entryp->name, name, name_len);
-  entryp->name[name_len] = '\0';
+  memcpy(entryp->name, name, copy_size);
+  entryp->name[copy_size] = '\0';
 
   // Return how much of the name was actually used.
   return copy_size;
@@ -78,13 +78,6 @@ int directory_lookup(inode_t *dnodep, const char *name)
 
   // Return -1 to indicate if no directory entry was found.
   return -1;
-}
-
-int directory_lookup_path(inode_t *dnodep, const char *path)
-{
-  assert(dnodep);
-  assert(dnodep->mode & INODE_DIR);
-  assert(path);
 }
 
 // Check for same name existing
@@ -191,9 +184,21 @@ int directory_delete(inode_t *dnodep, const char *name, bool_t update_child)
   return -ENOENT;
 }
 
-slist_t *directory_list(const char *path)
+slist_t *directory_list(inode_t *dnodep)
 {
-  assert(path);
+  assert(dnodep);
+  assert(dnodep->mode & INODE_DIR);
+
+  slist_t *list = NULL;
+  const char *name;
+
+  for (int i = directory_entry_count(dnodep) - 1; i >= 0; i--)
+  {
+    name = directory_get(dnodep, i)->name;
+    list = slist_cons(name, list);
+  }
+
+  return list;
 }
 
 void print_directory(inode_t *dnodep, bool_t include_empty_entries)

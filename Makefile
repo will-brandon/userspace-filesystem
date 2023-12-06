@@ -20,6 +20,10 @@ mount: nufs
 	mkdir -p mnt || true
 	./nufs -s -f mnt data.nufs
 
+mount-valgrind: nufs
+	mkdir -p mnt || true
+	valgrind ./nufs -s -f mnt data.nufs
+
 unmount:
 	fusermount -u mnt || true
 
@@ -30,4 +34,4 @@ gdb: nufs
 	mkdir -p mnt || true
 	gdb --args ./nufs -s -f mnt data.nufs
 
-.PHONY: clean mount unmount gdb
+.PHONY: clean mount mount-valgrind unmount gdb

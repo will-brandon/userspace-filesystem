@@ -25,10 +25,9 @@ int directory_entry_count(inode_t *dnodep);
 dirent_t *directory_get(inode_t *dnodep, int i);
 size_t directory_rename(dirent_t *entryp, const char *name);
 int directory_lookup(inode_t *dnodep, const char *name);
-int directory_lookup_path(inode_t *dnodep, const char *path);
 int directory_put(int dinum, const char *name, int entry_inum, bool_t update_child);
 int directory_delete(inode_t *dnodep, const char *name, bool_t update_child);
-slist_t *directory_list(const char *path);
+slist_t *directory_list(inode_t *dnodep);
 void print_directory(inode_t *dnodep, bool_t include_empty_entries);
 
 #endif
