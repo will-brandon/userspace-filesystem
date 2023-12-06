@@ -14,4 +14,6 @@
 typedef unsigned char byte_t;
 typedef char bool_t;
 
+void repeat_print(const char *str, size_t n);
+
 #endif

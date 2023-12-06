@@ -130,26 +130,28 @@ void storage_init(const char *path)
       directory_init(inums[i]);
     }
   }
-  /*
-  directory_put(ROOT_INUM, "code", inums[0], TRUE);
-  directory_put(ROOT_INUM, "school stuff", inums[2], TRUE);
-  directory_put(ROOT_INUM, "README.md", inums[1], TRUE);
   
-  directory_put(inums[0], "main.c", inums[1], TRUE);
-  directory_put(inums[0], "util.h", inums[3], TRUE);
-  directory_put(inums[0], "util.c", inums[5], TRUE);
-  directory_put(inums[0], "Makefile", inums[7], TRUE);
+  directory_add_entry(ROOT_INUM, "code", inums[0], TRUE);
+  directory_add_entry(ROOT_INUM, "school stuff", inums[2], TRUE);
+  directory_add_entry(ROOT_INUM, "README.md", inums[1], TRUE);
+  
+  directory_add_entry(inums[0], "main.c", inums[1], TRUE);
+  directory_add_entry(inums[0], "util.h", inums[3], TRUE);
+  directory_add_entry(inums[0], "util.c", inums[5], TRUE);
+  directory_add_entry(inums[0], "Makefile", inums[7], TRUE);
 
-  directory_put(inums[2], "CS4100", inums[4], TRUE);
-  directory_put(inums[2], "DS4400", inums[6], TRUE);
-  directory_put(inums[2], "resume.pdf", inums[9], TRUE);
+  directory_add_entry(inums[2], "CS4100", inums[4], TRUE);
+  directory_add_entry(inums[2], "DS4400", inums[6], TRUE);
+  directory_add_entry(inums[2], "resume.pdf", inums[9], TRUE);
 
-  directory_put(inums[6], "hw1.pdf", inums[11], TRUE);
-  directory_put(inums[6], "hw2.pdf", inums[13], TRUE);
-  directory_put(inums[6], "hw3.pdf", inums[15], TRUE);
-  directory_put(inums[6], "01234567890123456789012345678901234567890123456789012345678this will all be truncated", inums[8], TRUE);
-  */
+  directory_add_entry(inums[6], "hw1.pdf", inums[11], TRUE);
+  directory_add_entry(inums[6], "hw2.pdf", inums[13], TRUE);
+  directory_add_entry(inums[6], "hw3.pdf", inums[15], TRUE);
+  directory_add_entry(inums[6], "01234567890123456789012345678901234567890123456789012345678this will all be truncated", inums[8], TRUE);
 
+  directory_print_tree(root_nodep);
+  
+  /*
   int new_file_count = 15;
 
   printf("Creating %d new files in root.\n", new_file_count);
@@ -162,7 +164,7 @@ void storage_init(const char *path)
     directory_add_entry(ROOT_INUM, buffer + i, inum, TRUE);
   }
 
-  directory_print(root_nodep, TRUE);
+  directory_print(root_nodep, TRUE);*/
 }
 
 void storage_deinit(void)

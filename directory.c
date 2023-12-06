@@ -112,7 +112,7 @@ int directory_rename_entry(inode_t *dnodep, int entry_num, const char *name)
   assert(name);
 
   // Ensure the name is not too long.
-  if (strlen(name) < DIR_NAME_LENGTH)
+  if (strlen(name) >= DIR_NAME_LENGTH)
   {
     return -ENAMETOOLONG;
   }
@@ -144,7 +144,7 @@ int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t upda
   assert(inode_exists(entry_inum));
 
   // Ensure the name is not too long.
-  if (strlen(name) < DIR_NAME_LENGTH)
+  if (strlen(name) >= DIR_NAME_LENGTH)
   {
     return -ENAMETOOLONG;
   }
@@ -275,4 +275,43 @@ void directory_print(inode_t *dnodep, bool_t include_empty_entries)
       printf("%d\t%d\t%s\n", entry_num, entryp->inum, entryp->name);
     }
   }
+}
+
+void directory_print_leveled_tree(inode_t *dnodep, int level)
+{
+  assert(dnodep);
+  assert(dnodep->mode & INODE_DIR);
+  assert(level >= 0);
+
+  dirent_t *entryp;
+  inode_t *subnodep;
+
+  for (int entry_num = 0; entry_num < directory_total_entry_count(dnodep); entry_num++)
+  {
+    entryp = directory_get_entry(dnodep, entry_num);
+
+    if (entryp->inum < 0 || !strcmp(entryp->name, ".") || !strcmp(entryp->name, ".."))
+    {
+      continue;
+    }
+
+    repeat_print("  ", level);
+    printf("%s\n", entryp->name);
+
+    subnodep = get_inode(entryp->inum);
+
+    if (subnodep->mode & INODE_DIR)
+    {
+      directory_print_leveled_tree(subnodep, level + 1);
+    }
+  }
+}
+
+void directory_print_tree(inode_t *dnodep)
+{
+  assert(dnodep);
+  assert(dnodep->mode & INODE_DIR);
+
+  // Call the recursive helper.
+  directory_print_leveled_tree(dnodep, 0);
 }

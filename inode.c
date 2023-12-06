@@ -20,7 +20,7 @@ void print_inode(inode_t *nodep)
       nodep->next);
 }
 
-void print_inode_chain(inode_t *nodep)
+void print_inode_tree(inode_t *nodep)
 {
   assert(nodep);
 
@@ -28,10 +28,7 @@ void print_inode_chain(inode_t *nodep)
 
   for (i = 0;; i++)
   {
-    for (j = 0; j < 3 * (i - 1); j++)
-    {
-      printf(" ");
-    }
+    repeat_print(" ", 3 * (i - 1));
 
     if (i > 0)
     {

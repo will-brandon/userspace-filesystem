@@ -31,5 +31,6 @@ int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t upda
 int directory_delete(inode_t *dnodep, const char *name, bool_t update_child);
 slist_t *directory_list(inode_t *dnodep);
 void directory_print(inode_t *dnodep, bool_t include_empty_entries);
+void directory_print_tree(inode_t *dnodep);
 
 #endif
