@@ -18,7 +18,11 @@
 // Checks if a file exists.
 int nufs_access(const char *path, int mode)
 {
-  assert(path);
+  // Ensure the path is not null.
+  if (!path)
+  {
+    return -EINVAL;
+  }
   
   return storage_access(path, mode);
 }
@@ -28,8 +32,11 @@ int nufs_access(const char *path, int mode)
 // This is a crucial function.
 int nufs_getattr(const char *path, struct stat *stp)
 {
-  assert(path);
-  assert(stp);
+  // Ensure the path and stat pointer are not null.
+  if (!path || !stp)
+  {
+    return -EINVAL;
+  }
 
   return storage_stat(path, stp);
 }
@@ -39,18 +46,17 @@ int nufs_getattr(const char *path, struct stat *stp)
 int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                  off_t offset, struct fuse_file_info *fi)
 {
-  assert(path);
-  assert(filler);
-
-  return 0;
+  // Ensure the path is not null.
+  if (!path)
+  {
+    return -EINVAL;
+  }
 
   slist_t *names = NULL;
   struct stat st;
   int rv;
 
   rv = storage_list(path, &names);
-
-  
 
   // If an issue occured, return this error code.
   if (rv < 0)
@@ -70,8 +76,8 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   }
 
   slist_t *name_item = names;
-  /*
-  do
+  
+  while (name_item)
   {
     rv = storage_stat(path, &st);
 
@@ -84,8 +90,9 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     printf("NAME: %s\n", name_item->data);
 
     filler(buf, name_item->data, &st, 0);
+
+    name_item = name_item->next;
   }
-  while (name_item = names->next);*/
 
   slist_free(names);
   return 0;
