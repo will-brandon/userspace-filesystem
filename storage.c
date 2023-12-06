@@ -67,7 +67,15 @@ int inode_for_path_in(inode_t *dnodep, const char *path)
 
   // Split the path string into components and delegate to the list version of this function.
   slist_t *path_components = slist_explode(path, '/');
-  return inode_for_path_comps_in(dnodep, path_components);
+
+  slist_print(path_components, ", ");
+  printf("\n");
+
+  int inum = inode_for_path_comps_in(dnodep, path_components);
+
+  slist_free(path_components);
+
+  return inum;
 }
 
 int inode_for_path(const char *path)
@@ -133,7 +141,9 @@ void storage_init(const char *path)
   directory_put(inums[6], "hw3.pdf", inums[15], TRUE);
   directory_put(inums[6], "01234567890123456789012345678901234567890123456789012345678this will all be truncated", inums[8], TRUE);
 
-  printf("Okay.\n");
+  int entry_inum = inode_for_path("/");
+
+  printf("%d\n", entry_inum);
 }
 
 void storage_deinit(void)
