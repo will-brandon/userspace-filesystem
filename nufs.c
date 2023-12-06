@@ -157,9 +157,13 @@ int nufs_chmod(const char *path, mode_t mode)
 
 int nufs_truncate(const char *path, off_t size)
 {
-  int rv = -1;
-  printf("truncate(%s, %ld bytes) -> %d\n", path, size, rv);
-  return rv;
+  // Ensure the path is not null and size is at lest 0.
+  if (!path || size < 0)
+  {
+    return -EINVAL;
+  }
+
+  return storage_truncate(path, size);
 }
 
 // This is called on open, but doesn't need to do much
@@ -212,22 +216,28 @@ int nufs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_info *fi,
 
 void nufs_init_ops(struct fuse_operations *ops)
 {
+  // Zero-out the operation function pointer buffer.
   memset(ops, 0, sizeof(struct fuse_operations));
+
+  // Implemented working versions.
   ops->access = nufs_access;
   ops->getattr = nufs_getattr;
-  ops->readdir = nufs_readdir;
   ops->mknod = nufs_mknod;
-  // ops->create   = nufs_create; // alternative to mknod
-  ops->mkdir = nufs_mkdir;
   ops->link = nufs_link;
   ops->unlink = nufs_unlink;
-  ops->rmdir = nufs_rmdir;
   ops->rename = nufs_rename;
-  ops->chmod = nufs_chmod;
+  ops->rmdir = nufs_rmdir;
+  ops->mkdir = nufs_mkdir;
   ops->truncate = nufs_truncate;
-  ops->open = nufs_open;
   ops->read = nufs_read;
   ops->write = nufs_write;
+  ops->readdir = nufs_readdir;
+
+  // ops->create   = nufs_create; // alternative to mknod
+
+  // Implemented dummy versions.
+  ops->chmod = nufs_chmod;
+  ops->open = nufs_open;
   ops->utimens = nufs_utimens;
   ops->ioctl = nufs_ioctl;
 };
@@ -238,10 +248,16 @@ int main(int argc, char *argv[])
 {
   assert(argc > 2 && argc < 6);
   
+  // Initialize the storage putting the disk image file at the given path.
   storage_init(argv[--argc]);
+
+  // Initialize the fuse operation function pointer buffer and begin fuse.
   nufs_init_ops(&nufs_ops);
   int fuse_exit_code = fuse_main(argc, argv, &nufs_ops, NULL);
+
+  // Deinitialize the storage.
   storage_deinit();
 
+  // Return the exit code fuse produced.
   return fuse_exit_code;
 }
