@@ -1,5 +1,3 @@
-// based on cs3650 starter code
-
 #include <assert.h>
 #include <bsd/string.h>
 #include <dirent.h>
@@ -13,6 +11,7 @@
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
 
+#include "slist.h"
 #include "storage.h"
 
 // implementation for: man 2 access
@@ -39,36 +38,12 @@ int nufs_access(const char *path, int mask)
 // Gets an object's attributes (type, permissions, size, etc).
 // Implementation for: man 2 stat
 // This is a crucial function.
-int nufs_getattr(const char *path, struct stat *st)
+int nufs_getattr(const char *path, struct stat *stp)
 {
-  int rv = 0;
+  assert(path);
+  assert(stp);
 
-  // Return some metadata for the root directory...
-  if (strcmp(path, "/") == 0)
-  {
-    st->st_mode = 040755; // directory
-    st->st_size = 0;
-    st->st_uid = getuid();
-    st->st_gid = getgid(); // Not neccesary
-    st->st_mtime = 0;
-  }
-  // ...and the simulated file...
-  else if (strcmp(path, "/hello.txt") == 0)
-  {
-    st->st_mode = 0100644; // regular file
-    st->st_size = 6;
-    st->st_uid = getuid();
-    st->st_gid = getgid(); // Not necessary
-  }
-  else
-  { // ...other files do not exist on this filesystem
-    rv = -ENOENT;
-  }
-
-  printf("getattr(%s) -> (%d) {mode: %04o, size: %ld}\n", path, rv, st->st_mode,
-         st->st_size);
-  
-  return rv;
+  return storage_stat(path, stp);
 }
 
 // implementation for: man 2 readdir
@@ -76,19 +51,39 @@ int nufs_getattr(const char *path, struct stat *st)
 int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                  off_t offset, struct fuse_file_info *fi)
 {
+  assert(path);
+  assert(filler);
+
+  slist_t *names = NULL;
   struct stat st;
   int rv;
 
-  rv = nufs_getattr("/", &st);
-  assert(rv == 0);
+  storage_list(path, names);
 
-  filler(buf, ".", &st, 0);
+  // If the directory is empty, return immediately.
+  if (!names)
+  {
+    slist_free(names);
+    return 0;
+  }
 
-  rv = nufs_getattr("/hello.txt", &st);
-  assert(rv == 0);
-  filler(buf, "hello.txt", &st, 0);
+  slist_t *name_item = names;
 
-  printf("readdir(%s) -> %d\n", path, rv);
+  do
+  {
+    rv = storage_stat(path, &st);
+
+    if (rv < 0)
+    {
+      slist_free(names);
+      return rv;
+    }
+
+    filler(buf, name_item->data, &st, 0);
+  }
+  while (name_item = names->next);
+
+  slist_free(names);
   return 0;
 }
 

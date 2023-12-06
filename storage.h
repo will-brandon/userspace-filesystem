@@ -8,8 +8,6 @@
 #include <unistd.h>
 #include "slist.h"
 
-#define ROOT_INUM 0
-
 void storage_init(const char *path);
 void storage_deinit(void);
 int storage_stat(const char *path, struct stat *st);
@@ -21,6 +19,6 @@ int storage_unlink(const char *path);
 int storage_link(const char *from, const char *to);
 int storage_rename(const char *from, const char *to);
 int storage_set_time(const char *path, const struct timespec ts[2]);
-slist_t *storage_list(const char *path);
+int storage_list(const char *path, slist_t *name_list);
 
 #endif
