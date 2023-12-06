@@ -184,6 +184,36 @@ void storage_deinit(void)
   blocks_free();
 }
 
+int storage_access(const char *path, int mode)
+{
+  assert(path);
+
+  // If none of the modes were requested, return a success code of 0.
+  if (!(mode & F_OK & R_OK & W_OK & X_OK))
+  {
+    return 0;
+  }
+
+  // Lookup the inode at the given path.
+  int inum = inum_for_path(path);
+
+  // If a lookup error occured return the error code.
+  if (inum < 0)
+  {
+    return inum;
+  }
+
+  // If only F_OK was tested, we're safe to return 0 here.
+  if (!(mode & R_OK & W_OK & X_OK))
+  {
+    return 0;
+  }
+
+  // This is where the functionality could be extended to support R_OK, W_OK, and X_OK. For now,
+  // we assume that all are permitted.
+  return 0;
+}
+
 int storage_stat(const char *path, struct stat *stp)
 {
   assert(path);
@@ -257,7 +287,7 @@ int storage_set_time(const char *path, const struct timespec ts[2])
 {
 }
 
-int storage_list(const char *path, slist_t *names)
+int storage_list(const char *path, slist_t **namesp)
 {
   assert(path);
 
@@ -280,6 +310,6 @@ int storage_list(const char *path, slist_t *names)
   }
 
   // Get the directory listing and return a success code of 0.
-  names = directory_list(dnodep);
+  *namesp = directory_list(dnodep);
   return 0;
 }

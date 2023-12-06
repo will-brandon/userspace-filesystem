@@ -16,23 +16,11 @@
 
 // implementation for: man 2 access
 // Checks if a file exists.
-int nufs_access(const char *path, int mask)
+int nufs_access(const char *path, int mode)
 {
-  int rv = 0;
-  // F_OK, R_OK, W_OK, and X_OK
-  // Only the root directory and our simulated file are accessible for now...
+  assert(path);
   
-  if (strcmp(path, "/") == 0 || strcmp(path, "/hello.txt") == 0)
-  {
-    rv = 0;
-  }
-  else
-  { // ...others do not exist
-    rv = -ENOENT;
-  }
-
-  printf("access(%s, %04o) -> %d\n", path, mask, rv);
-  return rv;
+  return storage_access(path, mode);
 }
 
 // Gets an object's attributes (type, permissions, size, etc).
@@ -54,11 +42,25 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   assert(path);
   assert(filler);
 
+  return 0;
+
   slist_t *names = NULL;
   struct stat st;
   int rv;
 
-  storage_list(path, names);
+  rv = storage_list(path, &names);
+
+  
+
+  // If an issue occured, return this error code.
+  if (rv < 0)
+  {
+    return rv;
+  }
+
+  printf("%s: [", path);
+  slist_print(names, ", ");
+  printf("]\n");
 
   // If the directory is empty, return immediately.
   if (!names)
@@ -68,7 +70,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   }
 
   slist_t *name_item = names;
-
+  /*
   do
   {
     rv = storage_stat(path, &st);
@@ -79,9 +81,11 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
       return rv;
     }
 
+    printf("NAME: %s\n", name_item->data);
+
     filler(buf, name_item->data, &st, 0);
   }
-  while (name_item = names->next);
+  while (name_item = names->next);*/
 
   slist_free(names);
   return 0;
