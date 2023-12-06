@@ -12,7 +12,7 @@
 
 static inode_t *root_nodep;
 
-int inode_for_path_comps(inode_t *dnodep, slist_t *comps)
+int inode_for_path_comps_in(inode_t *dnodep, slist_t *comps)
 {
   assert(dnodep);
   assert(dnodep->mode & INODE_DIR);
@@ -29,30 +29,37 @@ int inode_for_path_comps(inode_t *dnodep, slist_t *comps)
   // If the string is empty, i.e. double slash, ignore it and move on to the next token.
   if (!strcmp(comps->data, ""))
   {
-    return inode_for_path_comps(dnodep, comps->next);
+    return inode_for_path_comps_in(dnodep, comps->next);
   }
 
   int entry_inum;
 
   // Lookip the inode in the directory. If it is an error, return this error.
-  if ((entry_inum = directory_lookup(comps->data, dnodep)) < 0)
+  if ((entry_inum = directory_lookup(dnodep, comps->data)) < 0)
   {
     return entry_inum;
   }
 
+  // If this is the end of the path, return the entry.
+  if (!comps->next)
+  {
+    return entry_inum;
+  }
+
+  // Get the entry node.
   inode_t *entry_dnodep = get_inode(entry_inum);
 
-  // Ensure that if there is more path coming, we ensure the node is a directory.
-  if (comps->next && !(entry_dnodep->mode & INODE_DIR))
+  // We ensure the node is a directory since there is more path coming.
+  if (!(entry_dnodep->mode & INODE_DIR))
   {
     return -ENOTDIR;
   }
 
   // Continue on down the path looking in that directory.
-  return inode_for_path_comps(entry_dnodep, comps->next);
+  return inode_for_path_comps_in(entry_dnodep, comps->next);
 }
 
-int inode_for_path(inode_t *dnodep, const char *path)
+int inode_for_path_in(inode_t *dnodep, const char *path)
 {
   assert(dnodep);
   assert(dnodep->mode & INODE_DIR);
@@ -60,7 +67,15 @@ int inode_for_path(inode_t *dnodep, const char *path)
 
   // Split the path string into components and delegate to the list version of this function.
   slist_t *path_components = slist_explode(path, '/');
-  return inode_for_path_comps(path_components);
+  return inode_for_path_comps_in(dnodep, path_components);
+}
+
+int inode_for_path(const char *path)
+{
+  assert(path);
+
+  // Start from the root.
+  return inode_for_path_in(root_nodep, path);
 }
 
 void storage_init(const char *path)
@@ -117,6 +132,8 @@ void storage_init(const char *path)
   directory_put(inums[6], "hw2.pdf", inums[13], TRUE);
   directory_put(inums[6], "hw3.pdf", inums[15], TRUE);
   directory_put(inums[6], "01234567890123456789012345678901234567890123456789012345678this will all be truncated", inums[8], TRUE);
+
+  printf("Okay.\n");
 }
 
 void storage_deinit(void)
