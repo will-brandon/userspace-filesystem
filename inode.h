@@ -37,7 +37,7 @@ int inode_grow_zero(inode_t *nodep, int size);
 int inode_shrink(inode_t *nodep, int size);
 int inode_get_bnum(inode_t *nodep, int file_bnum);
 void *inode_end(inode_t *nodep);
-int inode_fillinode_t *nodep, int offset, byte_t byte, int size);
+int inode_fill(inode_t *nodep, int offset, byte_t byte, int size);
 void inode_print(inode_t *nodep);
 void inode_print_tree(inode_t *nodep);
 void inode_print_blocks(inode_t *nodep);

@@ -23,17 +23,26 @@ void test(void)
 {
   memset(block_get(0) + RESERVED_SIZE, 0xCC, NUFS_SIZE - RESERVED_SIZE);
 
-  int inum = inode_alloc();
+  int inum1 = inode_alloc();
+  int inum2 = inode_alloc();
 
-  inode_t *nodep = inode_get(inum);
-  printf("\033[32mGROWING\033[0m\n");
-  inode_grow(nodep, 1);
-  inode_grow_zero(nodep, BLOCK_SIZE);
+  inode_t *node1p = inode_get(inum1);
+  inode_t *node2p = inode_get(inum2);
 
-  inode_print_blocks(nodep);
+  inode_grow(node1p, BLOCK_SIZE / 2);
+  inode_grow(node2p, BLOCK_SIZE / 2);
+  inode_grow(node1p, BLOCK_SIZE);
 
-  inode_print_tree(nodep);
-  inode_free(inum);
+  inode_fill(node1p, BLOCK_SIZE - 1, 0x01, 2);
+
+  inode_print_blocks(node1p);
+  inode_print_blocks(node2p);
+
+  //inode_print_tree(node1p);
+  //inode_print_tree(node2p);
+
+  inode_free(inum1);
+  inode_free(inum2);
 
   /*
   #define INODES 16

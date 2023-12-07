@@ -289,14 +289,29 @@ int inode_fill(inode_t *nodep, int offset, byte_t byte, int size)
     return 0;
   }
 
-  // Calculate the total size of the inode and how many bytes can actually be written given its
-  // size.
+  // Calculate the total size of the inode and how many bytes can actually be filled given its size.
   int total_size = inode_total_size(nodep);
   size = MIN(total_size - offset, size);
 
-  //int bnum = inode_get_bnum(nodep, total_size / BLOCK_SIZE);
-  //int block_offset = total_size % BLOCK_SIZE;
-  //inode_get_bnum
+  // Get the first block number and offset.
+  int remaining_size = size;
+  int file_bnum = offset / BLOCK_SIZE;
+  offset %= BLOCK_SIZE;
+  void *block_start = block_get(inode_get_bnum(nodep, file_bnum));
+  int block_fill_size = MIN(BLOCK_SIZE - offset, remaining_size);
+
+  memset(block_start + offset, byte, block_fill_size);
+  remaining_size -= block_fill_size;
+
+  while (remaining_size > 0)
+  {
+    file_bnum++;
+    block_start = block_get(inode_get_bnum(nodep, file_bnum));
+    block_fill_size = MIN(BLOCK_SIZE, remaining_size);
+
+    memset(block_start, byte, block_fill_size);
+    remaining_size -= block_fill_size;
+  }
 
   return size;
 }
@@ -339,16 +354,16 @@ void inode_print_tree(inode_t *nodep)
 
 void inode_print_blocks_label_offset(inode_t *nodep, int label_offset)
 {
-  int block_num;
+  int bnum;
 
   for (int i = 0; i < INODE_LOCAL_BLOCK_CAP; i++)
   {
-    block_num = nodep->blocks[i];
+    bnum = nodep->blocks[i];
 
-    if (block_num >= 0)
+    if (bnum >= 0)
     {
-      printf("\033[0;1;92mBLOCK %d:\033[0m\n", i + label_offset);
-      block_print(block_num);
+      printf("\033[0;1;92mBLOCK %d (BNUM %d)\033[0m\n", i + label_offset, bnum);
+      block_print(bnum);
     }
   }
 

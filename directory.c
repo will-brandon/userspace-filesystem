@@ -196,7 +196,7 @@ int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t back
   {
     // Since no open entry exists, create a new one and grow the inode. If the inode returns -ENOSPC
     // indicating that the disk is full, return -ENOSPC immediately.
-    if (inode_grow(dnodep, sizeof(dirent_t), FALSE) < 0)
+    if (inode_grow(dnodep, sizeof(dirent_t)) < 0)
     {
       return -ENOSPC;
     }
