@@ -54,6 +54,14 @@ void test(void)
   directory_add_entry(inums[6], "hw2.pdf", inums[13], TRUE);
   directory_add_entry(inums[6], "hw3.pdf", inums[15], TRUE);
   directory_add_entry(inums[6], "01234567890123456789012345678901234567890123456789012345678this will all be truncated", inums[8], TRUE);
+
+  slist_t *comps = slist_explode("//hello///.", '/');
+  const char *last_comp;
+  int i = path_comps_pop(comps, &last_comp);
+
+  printf("i=%d, str='%s'\n", i, last_comp);
+
+  slist_free(comps);
   
   /*
   int new_file_count = 15;

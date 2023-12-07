@@ -76,3 +76,25 @@ int inum_for_path_in(int dinum, const char *path)
   return inum;
 }
 
+int path_comps_pop(slist_t *comps, const char **last_comp_namep)
+{
+  int i = -1;
+  int last_comp_i = -1;
+  *last_comp_namep = NULL;
+
+  while (comps)
+  {
+    i++;
+    
+    // If this component is not an empty string, set the last component string pointer to this.
+    if (strcmp(comps->data, ""))
+    {
+      *last_comp_namep = comps->data;
+      last_comp_i = i;
+    }
+
+    comps = comps->next;
+  }
+
+  return last_comp_i;
+}
