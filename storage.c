@@ -305,8 +305,15 @@ int storage_link(const char *from, const char *to)
   free((void *) from_name);
   free((void *) to_name);
 
-  // If the add entry failed return its code. Otherwise, return 0.
-  return rv < 0 ? rv : 0;
+  // If the entry failed to be added return its error code.
+  if (rv < 0)
+  {
+    return rv;
+  }
+
+  // Increase the ref counter and successfully return 0.
+  inode_get(inum)->refs++;
+  return 0;
 }
 
 int storage_unlink(const char *path)
