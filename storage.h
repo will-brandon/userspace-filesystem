@@ -12,7 +12,6 @@ void storage_init(const char *host_path);
 void storage_deinit(void);
 void storage_clear(void);
 int storage_inum_for_path(const char *path);
-int storage_parent_dir_inum_for_path(const char *path);
 int storage_access(const char *path, int mode);
 int storage_stat(const char *path, struct stat *st);
 int storage_mknod(const char *path, int mode);

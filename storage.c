@@ -115,14 +115,6 @@ int storage_inum_for_path(const char *path)
   return inum_for_path_in(ROOT_INUM, path);
 }
 
-int storage_parent_dir_inum_for_path(const char *path)
-{
-  assert(path);
-
-  // Start from the root.
-  return parent_inum_for_path_in(ROOT_INUM, path);
-}
-
 int storage_access(const char *path, int mode)
 {
   assert(path);
@@ -198,8 +190,33 @@ int storage_mknod(const char *path, int mode)
 {
   assert(path);
 
+  // Check if an inode already exists at the path.
+  int inum = storage_inum_for_path(path);
+
+  // If the path already exists, return an error code.
+  if (inum >= 0)
+  {
+    return EEXIST;
+  }
+
+  // If a non-directory node was traversed in the path return this error code.
+  if (inum == -ENOTDIR)
+  {
+    return -ENOTDIR;
+  }
+
+  // At this point we better be sure that the result was that it could not be found, otherwise a
+  // logical error has occured.
+  assert(inum == -ENOENT);
+
+  // IMPORTANT NOTE: At this point, we know that the file this path points to cannot be .. or . or
+  // any other type of graph cycle, since it does not exist. Therefore we can assume the very last
+  // non-whitespace component in the pathstring is the name, and every single component before it is
+  // the directory, whether or not it is canonical does not matter. We will just need to access its
+  // inum so we can add an entry into the directory table.
+
   // Allocate a new node.
-  int inum = inode_alloc();
+  inum = inode_alloc();
 
   // If an error occured allocating the node, return the error.
   if (inum < 0)
