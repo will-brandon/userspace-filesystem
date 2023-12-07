@@ -24,6 +24,7 @@ typedef struct dirent {
 void directory_init(int inum);
 int directory_total_entry_count(inode_t *dnodep);
 int directory_populated_entry_count(inode_t *dnodep);
+bool_t directory_is_empty(inode_t *dnodep);
 dirent_t *directory_get_entry(inode_t *dnodep, int entry_num);
 int directory_lookup_entry_num(inode_t *dnodep, const char *name);
 int directory_lookup_inum(inode_t *dnodep, const char *name);

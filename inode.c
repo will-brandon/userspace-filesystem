@@ -143,7 +143,7 @@ int inode_free(int inum)
   bitmap_put(block_inode_bitmap_start(), inum, 0);
 }
 
-int inode_grow(inode_t *nodep, int size)
+int inode_grow(inode_t *nodep, int size, bool_t zero_out)
 {
   assert(nodep);
 
@@ -175,7 +175,7 @@ int inode_grow(inode_t *nodep, int size)
 
     // Recursively grow the inode starting at the last child as a performance shortcut. If the
     // size is not greater than the size of a block nothing will happen.
-    if (inode_grow(last_childp, size - BLOCK_SIZE) < 0)
+    if (inode_grow(last_childp, size - BLOCK_SIZE, zero_out) < 0)
     {
       return -ENOSPC;
     }
@@ -197,7 +197,7 @@ int inode_grow(inode_t *nodep, int size)
   }
 
   // Recursively perform the growth in this child inode with the remaining size.
-  if (inode_grow(inode_get(last_childp->next), remaining_size_change) < 0)
+  if (inode_grow(inode_get(last_childp->next), remaining_size_change, zero_out) < 0)
   {
     return -ENOSPC;
   }

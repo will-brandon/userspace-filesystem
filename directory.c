@@ -44,6 +44,27 @@ int directory_populated_entry_count(inode_t *dnodep)
   return count;
 }
 
+bool_t directory_is_empty(inode_t *dnodep)
+{
+  assert(dnodep);
+  assert(dnodep->mode & INODE_DIR);
+
+  const char *name;
+
+  // Search for anything that is not either . or .. in the directory.
+  for (int entry_num = 0; entry_num < directory_total_entry_count(dnodep); entry_num++)
+  {
+    name = directory_get_entry(dnodep, entry_num)->name;
+
+    if (strcmp(name, ".") && strcmp(name, ".."))
+    {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
 dirent_t *directory_get_entry(inode_t *dnodep, int entry_num)
 {
   assert(dnodep);
@@ -175,21 +196,23 @@ int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t back
   {
     // Since no open entry exists, create a new one and grow the inode. If the inode returns -ENOSPC
     // indicating that the disk is full, return -ENOSPC immediately.
-    if (inode_grow(dnodep, sizeof(dirent_t)) < 0)
+    if (inode_grow(dnodep, sizeof(dirent_t), FALSE) < 0)
     {
       return -ENOSPC;
     }
 
-    // Insert the proper data into the entry.
+    // Use the newly allocated entry (not zeroed out because we will set all the data anyways).
     entryp = directory_get_entry(dnodep, total_entry_count);
   }
 
+  // Insert the proper data into the entry.
   entryp->inum = entry_inum;
   directory_rename_entry(dnodep, entry_num, name);
 
   // Put an entry for .. in the child if it is a directory and this option is requested.
   if (back_entry_in_child && inode_get(entry_inum)->mode & INODE_DIR)
   {
+    printf("Putting .. into '%s'\n", name);
     directory_add_entry(entry_inum, "..", dinum, FALSE);
   }
 

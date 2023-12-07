@@ -122,9 +122,9 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
               struct fuse_file_info *fi)
 {
   printf("read(%s, %ld bytes, @+%ld)", path, size, offset);
-  int rv = 6;
-  strcpy(buf, "hello\n");
-  return rv;
+
+  // Delegate to storage.
+  return storage_read(path, buf, size, offset);
 }
 
 // Actually write data
@@ -132,26 +132,39 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
                struct fuse_file_info *fi)
 {
   printf("write(%s, %ld bytes, @+%ld)\n", path, size, offset);
-  int rv = -1;
-  return rv;
+
+  // Delegate to storage.
+  return storage_write(path, buf, size, offset);
 }
 
 // most of the following callbacks implement
 // another system call; see section 2 of the manual
 int nufs_mkdir(const char *path, mode_t mode)
 {
+  // Ensure the path is not null.
+  if (!path)
+  {
+    return -EINVAL;
+  }
+
   printf("mkdir(%s)\n", path);
-  int rv = nufs_mknod(path, mode | 040000, 0);
-  printf("mkdir(%s) -> %d\n", path, rv);
-  return rv;
+
+  // Delegate to mknod but ensure the mode is a directory no matter what.
+  return nufs_mknod(path, mode | STORAGE_DIR, 0);
 }
 
 int nufs_rmdir(const char *path)
 {
+  // Ensure the path is not null.
+  if (!path)
+  {
+    return -EINVAL;
+  }
+
   printf("rmdir(%s)\n", path);
-  int rv = -1;
-  printf("rmdir(%s) -> %d\n", path, rv);
-  return rv;
+  
+  // Delegate to storage.
+  return storage_rmdir(path);
 }
 
 // implementation for: man 2 readdir

@@ -34,7 +34,7 @@ inode_t *inode_last_child(inode_t *nodep);
 inode_t *inode_second_to_last_child(inode_t *nodep);
 int inode_alloc(void);
 int inode_free(int inum);
-int inode_grow(inode_t *nodep, int size);
+int inode_grow(inode_t *nodep, int size, bool_t zero_out);
 int inode_shrink(inode_t *nodep, int size);
 int inode_get_bnum(inode_t *nodep, int file_bnum);
 

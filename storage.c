@@ -230,6 +230,16 @@ int storage_mknod(const char *path, int mode)
     return inum;
   }
 
+  // Get the inode and update its mode.
+  inode_t *nodep = inode_get(inum);
+  nodep->mode = mode;
+
+  // If the node is a directory, initialize the directory in the node data.
+  if (mode & INODE_DIR)
+  {
+    directory_init(inum);
+  }
+
   // Get the name of the child and the inum of the parent directory. We know the parent must exist
   // since the inode at the whole path exists.
   const char *name;
@@ -250,11 +260,8 @@ int storage_mknod(const char *path, int mode)
     return rv;
   }
 
-  // Increase the ref counter.
-  inode_get(inum)->refs++;
-
-  // Set the mode of the node and return the success code 0.
-  inode_get(inum)->mode = mode;
+  // Increase the ref counter and return success code 0.
+  nodep->refs++;
   return 0;
 }
 
@@ -300,7 +307,7 @@ int storage_link(const char *from, const char *to)
 
   // Add the directory entry. Hard links arent allowed for directories so we don't have to worry
   // about adding the .. (the last FALSE argument doesn't matter).
-  int rv = directory_add_entry(to_parent_inum, to_name, inum, FALSE);
+  int rv = directory_add_entry(to_parent_inum, to_name, inum, TRUE);
 
   // Free the name strings.
   free((void *) from_name);
@@ -342,7 +349,7 @@ int storage_unlink(const char *path)
 
   // Remove the directory entry. Hard links arent allowed for directories so we don't have to worry
   // about removing the .. (the last FALSE argument doesn't matter).
-  int rv = directory_delete(parent_node, name, FALSE);
+  int rv = directory_delete(parent_node, name, TRUE);
   free((void *) name);
 
   // Return any errors that may have occured attempting to remove the directory entry.
@@ -374,6 +381,39 @@ int storage_rename(const char *from, const char *to)
 
 }
 
+int storage_rmdir(const char *dpath)
+{
+  assert(dpath);
+
+  // Lookup the inode at the given path.
+  int inum = storage_inum_for_path(dpath);
+
+  // If a lookup error occured return the error code.
+  if (inum < 0)
+  {
+    return inum;
+  }
+
+  // Get a pointer to the inode.
+  inode_t *dnodep = inode_get(inum);
+
+  // If the node is not a directory return an error code.
+  if (!(dnodep->mode & INODE_DIR))
+  {
+    return -ENOTDIR;
+  }
+
+  // Ensure the directory is empty (except . and ..).
+  if (!directory_is_empty(dnodep))
+  {
+    return -ENOTEMPTY;
+  }
+
+  // Unlink (and naturally delete) the directory.
+  int rv = storage_unlink(dpath);
+  return rv < 0 ? rv : 0;
+}
+
 
 int storage_truncate(const char *path, off_t size)
 {
@@ -397,7 +437,7 @@ int storage_truncate(const char *path, off_t size)
   // Grow the inode if the delta > 0.
   if (size_delta > 0)
   {
-    rv = inode_grow(nodep, size_delta);
+    rv = inode_grow(nodep, size_delta, TRUE);
   }
   // Shrink the inode if the delta < 0.
   else if (size_delta < 0)
@@ -411,12 +451,12 @@ int storage_truncate(const char *path, off_t size)
 
 int storage_read(const char *path, char *buf, size_t size, off_t offset)
 {
-  
+  return -1;
 }
 
 int storage_write(const char *path, const char *buf, size_t size, off_t offset)
 {
-  
+  return -1;
 }
 
 int storage_list(const char *dpath, slist_t **namesp)
