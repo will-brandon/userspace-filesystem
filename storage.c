@@ -86,10 +86,9 @@ void storage_init(const char *host_path)
     directory_init(ROOT_INUM);
   }
 
-  // Initialize a pointer to the root node structure.
+  // Initialize a pointer to the root node structure and ensure it's .. points to itself.
   root_nodep = inode_get(ROOT_INUM);
-
-  //test();
+  directory_add_entry(ROOT_INUM, "..", ROOT_INUM, FALSE);
 }
 
 void storage_deinit(void)
@@ -378,7 +377,26 @@ int storage_unlink(const char *path)
 
 int storage_rename(const char *from, const char *to)
 {
+  assert(from);
+  assert(to);
 
+  int rv = storage_link(from, to);
+
+  if (rv < 0)
+  {
+    return rv;
+  }
+
+  rv = storage_unlink(from);
+
+  if (rv < 0)
+  {
+    // If we couldn't form the link we need to unlink the new one we already made.
+    storage_unlink(to);
+    return rv;
+  }
+
+  return 0;
 }
 
 int storage_rmdir(const char *dpath)

@@ -1,0 +1,5 @@
+MAKE SURE TRUNCATE CLEARS TO ZERO!!!!! THIS MUST BE IMPLEMENTED IN INODE GROW!!!
+
+Remove test() in storage.c
+
+figure out funky thing with nested dirs sometimes not deleting when empty.

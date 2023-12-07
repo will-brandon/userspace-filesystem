@@ -97,10 +97,16 @@ int nufs_unlink(const char *path)
 // called to move a file within the same filesystem
 int nufs_rename(const char *from, const char *to)
 {
+  // Ensure the from and to paths are not null.
+  if (!from || !to)
+  {
+    return -EINVAL;
+  }
+  
   printf("rename(%s => %s)\n", from, to);
-  int rv = -1;
-  printf("rename(%s => %s) -> %d\n", from, to, rv);
-  return rv;
+  
+  // Delegate to storage.
+  return storage_rename(from, to);
 }
 
 int nufs_truncate(const char *path, off_t size)
