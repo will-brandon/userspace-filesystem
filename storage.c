@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <string.h>
+
 #include "util.h"
 #include "specs.h"
 #include "storage.h"
@@ -12,6 +13,7 @@
 #include "directory.h"
 #include "slist.h"
 #include "bitmap.h"
+#include "path.h"
 
 #define ROOT_INUM 0
 
@@ -69,85 +71,12 @@ void test(void)
   directory_print(root_nodep, TRUE);*/
 }
 
-int inum_for_path_comps_in(int dinum, slist_t *comps)
+void storage_init(const char *host_path)
 {
-  assert(dinum >= 0);
-  assert(inode_exists(dinum));
-
-  // Get the node.
-  inode_t *dnodep = inode_get(dinum);
-
-  assert(dnodep->mode & INODE_DIR);
-
-  // If the components are null return no such file error.
-  if (!comps)
-  {
-    return -ENOENT;
-  }
-
-  // Ensure the data is not null.
-  assert(comps->data);
-
-  // If the string is empty and the next token exists, i.e. double slash, ignore it and move on to
-  // the next token. But, if the string is empty and there is no next token, return the parent dir.
-  if (!strcmp(comps->data, ""))
-  {
-    if (comps->next)
-    {
-      return inum_for_path_comps_in(dinum, comps->next);
-    }
-
-    return dinum;
-  }
-
-  int entry_inum;
-
-  // Lookup the inode in the directory. If it is an error, we can conveniently return this error
-  // code. If the lookup succeeded and this is the end of the path, return the entry.
-  if ((entry_inum = directory_lookup_inum(dnodep, comps->data)) < 0 || !comps->next)
-  {
-    return entry_inum;
-  }
-
-  // We ensure the entry node is a directory since there is more path coming.
-  if (!(inode_get(entry_inum)->mode & INODE_DIR))
-  {
-    return -ENOTDIR;
-  }
-
-  // Continue on down the path looking in that directory.
-  return inum_for_path_comps_in(entry_inum, comps->next);
-}
-
-int inum_for_path_in(int dinum, const char *path)
-{
-  assert(dinum >= 0);
-  assert(inode_exists(dinum));
-  assert(inode_get(dinum)->mode & INODE_DIR);
-  assert(path);
-
-  // Split the path string into components and delegate to the list version of this function.
-  slist_t *path_components = slist_explode(path, '/');
-  int inum = inum_for_path_comps_in(dinum, path_components);
-  slist_free(path_components);
-
-  return inum;
-}
-
-int inum_for_path(const char *path)
-{
-  assert(path);
-
-  // Start from the root.
-  return inum_for_path_in(ROOT_INUM, path);
-}
-
-void storage_init(const char *path)
-{
-  assert(path);
+  assert(host_path);
 
   // Create a memory map and initialize the disk blocks and.
-  block_init(path);
+  block_init(host_path);
 
   printf("\033[0;1;31mREMEMBER TO REMOVE THIS CLEAR FUNCTION DUMBASS!\033[0m\n");
   storage_clear();
@@ -178,6 +107,22 @@ void storage_clear(void)
   block_clear();
 }
 
+int storage_inum_for_path(const char *path)
+{
+  assert(path);
+
+  // Start from the root.
+  return inum_for_path_in(ROOT_INUM, path);
+}
+
+int storage_parent_dir_inum_for_path(const char *path)
+{
+  assert(path);
+
+  // Start from the root.
+  return 0;//parent_inum_for_path_in(ROOT_INUM, path);
+}
+
 int storage_access(const char *path, int mode)
 {
   assert(path);
@@ -189,7 +134,7 @@ int storage_access(const char *path, int mode)
   }
 
   // Lookup the inode inum at the given path.
-  int inum = inum_for_path(path);
+  int inum = storage_inum_for_path(path);
 
   // If a lookup error occured return the error code.
   if (inum < 0)
@@ -214,7 +159,7 @@ int storage_stat(const char *path, struct stat *stp)
   assert(stp);
 
   // Lookup the inode inum at the given path.
-  int inum = inum_for_path(path);
+  int inum = storage_inum_for_path(path);
 
   // If a lookup error occured return the error code.
   if (inum < 0)
@@ -262,6 +207,8 @@ int storage_mknod(const char *path, int mode)
     return inum;
   }
 
+  //directory_add_entry();
+
   // Set the mode of the node and return the success code 0.
   inode_get(inum)->mode = mode;
   return 0;
@@ -273,8 +220,8 @@ int storage_link(const char *from, const char *to)
   assert(to);
 
   // Get the inum of the inode at the "from" path.
-  int inum = inum_for_path(from);
-
+  int inum = storage_inum_for_path(from);
+  
   // Ensure the inode at the "from" path exists.
   if (inum < 0)
   {
@@ -282,12 +229,12 @@ int storage_link(const char *from, const char *to)
   }
 
   // Ensure the inode at the "to" path does not already exist.
-  if (inum_for_path(to) >= 0)
+  if (storage_inum_for_path(to) >= 0)
   {
     return -EEXIST;
   }
 
-  
+  return 0;
 }
 
 int storage_unlink(const char *path)
@@ -297,6 +244,7 @@ int storage_unlink(const char *path)
 
 int storage_rename(const char *from, const char *to)
 {
+
 }
 
 
@@ -306,7 +254,7 @@ int storage_truncate(const char *path, off_t size)
   assert(size >= 0);
 
   // Lookup the inode inum at the given path.
-  int inum = inum_for_path(path);
+  int inum = storage_inum_for_path(path);
 
   // If a lookup error occured return the error code.
   if (inum < 0)
@@ -336,10 +284,12 @@ int storage_truncate(const char *path, off_t size)
 
 int storage_read(const char *path, char *buf, size_t size, off_t offset)
 {
+  
 }
 
 int storage_write(const char *path, const char *buf, size_t size, off_t offset)
 {
+  
 }
 
 int storage_list(const char *dpath, slist_t **namesp)
@@ -347,7 +297,7 @@ int storage_list(const char *dpath, slist_t **namesp)
   assert(dpath);
 
   // Lookup the inode at the given path.
-  int inum = inum_for_path(dpath);
+  int inum = storage_inum_for_path(dpath);
 
   // If a lookup error occured return the error code.
   if (inum < 0)
