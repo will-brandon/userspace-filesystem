@@ -27,9 +27,8 @@ void test(void)
 
   inode_t *nodep = inode_get(inum);
   printf("\033[32mGROWING\033[0m\n");
-  inode_grow(nodep, 16, FALSE);
-  inode_grow(nodep, 16, TRUE);
-  inode_grow(nodep, 32, FALSE);
+  inode_grow(nodep, 1, FALSE);
+  inode_grow(nodep, BLOCK_SIZE, TRUE);
 
   inode_print_blocks(nodep);
 

@@ -122,17 +122,14 @@ int inode_grow(inode_t *nodep, int size, bool_t zero_out)
   // This will be the particular single block being expanded by this recursive iteration. Note that
   // each recursive iteration will only actually update one block before recurring to a separate
   // block.
-  int block_num;
+  int bnum;
 
   // If no more blocks are needed simply increase the size.
   if (bytes_to_blocks(last_childp->size + size) == last_child_used_blocks)
   {
     if (zero_out)
     {
-      block_num = last_childp->blocks[last_child_used_blocks - 1];
-      int block_prev_size = last_childp->size % BLOCK_SIZE;
-      void *fill_start = block_get(block_num) + block_prev_size;
-      memset(fill_start, 0, size);
+      memset(inode_end(nodep), 0, size);
     }
     
     last_childp->size += size;
@@ -143,12 +140,23 @@ int inode_grow(inode_t *nodep, int size, bool_t zero_out)
   if (last_child_used_blocks < INODE_LOCAL_BLOCK_CAP)
   {
     // Allocate the new block and ensure there is enough storage.
-    if ((block_num = block_alloc()) < 0)
+    if ((bnum = block_alloc()) < 0)
     {
       return -ENOSPC;
     }
 
-    last_childp->blocks[last_child_used_blocks] = block_num;
+    // THIS NEEDS ADJUSTMENT!!! IT OVERWRITES BAD BLOCKS!!!!
+    if (zero_out)
+    {
+      memset(inode_end(nodep), 0, size);
+    }
+
+    last_childp->blocks[last_child_used_blocks] = bnum;
+
+    if (zero_out)
+    {
+      memset(inode_end(nodep), 0, size);
+    }
 
     // Grow the last child's size by whatever this increment was.
     last_childp->size += MIN(BLOCK_SIZE, size);
@@ -255,6 +263,15 @@ int inode_get_bnum(inode_t *nodep, int file_bnum)
 
   // Recursively look into the child.
   return inode_get_bnum(inode_get(nodep->next), file_bnum - INODE_LOCAL_BLOCK_CAP);
+}
+
+void *inode_end(inode_t *nodep)
+{
+  // Calculate a pointer to the first byte directly after the end of the last byte in the file.
+  int total_size = inode_total_size(nodep);
+  int last_block_size = total_size % BLOCK_SIZE;
+  int last_block_num = inode_get_bnum(nodep, total_size / BLOCK_SIZE);
+  return block_get(last_block_num) + last_block_size;
 }
 
 void inode_print(inode_t *nodep)
