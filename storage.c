@@ -21,8 +21,21 @@ static inode_t *root_nodep;
 
 void test(void)
 {
-  #define INODES 16
+  //memset(block_get(0) + RESERVED_SIZE, 0, NUFS_SIZE - RESERVED_SIZE);
 
+  int inum = inode_alloc();
+
+  inode_t *nodep = inode_get(inum);
+  printf("\033[32mGROWING\033[0m\n");
+  inode_grow(nodep, BLOCK_SIZE * 4 + 1, FALSE);
+
+  inode_print_tree(nodep);
+
+  inode_free(inum);
+
+  /*
+  #define INODES 16
+  
   int inums[INODES];
   inode_t *inodes[INODES];
 
@@ -55,7 +68,7 @@ void test(void)
   directory_add_entry(inums[6], "hw3.pdf", inums[15], TRUE);
   directory_add_entry(inums[6], "01234567890123456789012345678901234567890123456789012345678this will all be truncated", inums[8], TRUE);
 
-  /*
+  
   int new_file_count = 15;
 
   printf("Creating %d new files in root.\n", new_file_count);
@@ -89,6 +102,8 @@ void storage_init(const char *host_path)
   // Initialize a pointer to the root node structure and ensure it's .. points to itself.
   root_nodep = inode_get(ROOT_INUM);
   directory_add_entry(ROOT_INUM, "..", ROOT_INUM, FALSE);
+
+  test();
 }
 
 void storage_deinit(void)
@@ -356,8 +371,6 @@ int storage_unlink(const char *path)
   {
     return rv;
   }
-
-  directory_print(parent_node, TRUE);
 
   // Decrease the ref counter.
   int refs = --(inode_get(inum)->refs);

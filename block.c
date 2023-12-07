@@ -18,9 +18,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "util.h"
 #include "specs.h"
 #include "bitmap.h"
 #include "block.h"
+
+#define BLOCK_PRINT_COLS 32
 
 static int blocks_fd = -1;
 static void *blocks_base = 0;
@@ -101,7 +104,7 @@ void *block_inode_start(void)
 
 void *block_content_start(void)
 {
-  return block_get(0) + BLOCK_SIZE * RESERVED_BLOCKS;
+  return block_get(0) + RESERVED_SIZE;
 }
 
 // Allocate a new block and return its index.
@@ -124,4 +127,40 @@ void block_free(int bnum)
 {
   void *bbm = block_block_bitmap_start();
   bitmap_put(bbm, bnum, 0);
+}
+
+void block_print(int bnum)
+{
+  assert(bnum >= 0);
+
+  const int rows = BLOCK_SIZE / BLOCK_PRINT_COLS;
+
+  void *bytep = block_get(bnum);
+  unsigned int byte_buffer;
+
+  for (int i = 0; i < BLOCK_SIZE; i++)
+  {
+    byte_buffer = *((byte_t *) bytep);
+
+    // Ensure an extra 0 is added if necessary.
+    if (byte_buffer > 0xF)
+    {
+      printf("%x", byte_buffer);
+    }
+    else
+    {
+      printf("0%x", byte_buffer);
+    }
+
+    if ((i + 1) % BLOCK_PRINT_COLS == 0)
+    {
+      printf("\n");
+    }
+    else
+    {
+      printf(" ");
+    }
+
+    bytep++;
+  }
 }

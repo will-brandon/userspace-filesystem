@@ -80,4 +80,6 @@ int block_alloc(void);
  */
 void block_free(int bnum);
 
+void block_print(int bnum);
+
 #endif

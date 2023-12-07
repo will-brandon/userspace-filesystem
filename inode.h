@@ -24,8 +24,6 @@ typedef struct inode
   int next;                          // -1 if no other inode, otherwise inum of next inode
 } inode_t;
 
-void inode_print(inode_t *nodep);
-void inode_print_tree(inode_t *nodep);
 bool_t inode_exists(int inum);
 inode_t *inode_get(int inum);
 void inode_reset(inode_t *nodep);
@@ -37,5 +35,8 @@ int inode_free(int inum);
 int inode_grow(inode_t *nodep, int size, bool_t zero_out);
 int inode_shrink(inode_t *nodep, int size);
 int inode_get_bnum(inode_t *nodep, int file_bnum);
+void inode_print(inode_t *nodep);
+void inode_print_tree(inode_t *nodep);
+void inode_print_blocks(inode_t *nodep);
 
 #endif

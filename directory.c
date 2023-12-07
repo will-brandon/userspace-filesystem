@@ -288,7 +288,7 @@ slist_t *directory_list(inode_t *dnodep)
   return list;
 }
 
-void directory_print(inode_t *dnodep, bool_t include_empty_entries)
+void directory_print_entries(inode_t *dnodep, bool_t include_empty_entries)
 {
   assert(dnodep);
   assert(dnodep->mode & INODE_DIR);

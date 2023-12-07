@@ -9,43 +9,6 @@
 #include "inode.h"
 #include "util.h"
 
-void inode_print(inode_t *nodep)
-{
-  assert(nodep);
-
-  printf(
-      "INODE(r=%d, m=%o, s=%d, b={%d, %d, %d, %d}, n=%d)\n",
-      nodep->refs, nodep->mode, nodep->size,
-      nodep->blocks[0], nodep->blocks[1], nodep->blocks[2], nodep->blocks[3],
-      nodep->next);
-}
-
-void inode_print_tree(inode_t *nodep)
-{
-  assert(nodep);
-
-  int i, j;
-
-  for (i = 0;; i++)
-  {
-    repeat_print(" ", 3 * (i - 1));
-
-    if (i > 0)
-    {
-      printf(" \u2514\u2500");
-    }
-
-    inode_print(nodep);
-
-    if (nodep->next < 0)
-    {
-      return;
-    }
-
-    nodep = inode_get(nodep->next);
-  }
-}
-
 bool_t inode_exists(int inum)
 {
   assert(inum >= 0);
@@ -91,6 +54,7 @@ inode_t *inode_last_child(inode_t *nodep)
 {
   assert(nodep);
 
+  // Recursively follow the chain of inodes until the last one is found.
   return nodep->next < 0 ? nodep : inode_last_child(inode_get(nodep->next));
 }
 
@@ -137,8 +101,6 @@ int inode_free(int inum)
   assert(inum < MAX_INODE_COUNT);
   assert(inode_exists(inum));
 
-  printf("FREEE\n");
-
   // Set the inode to unused.
   bitmap_put(block_inode_bitmap_start(), inum, 0);
 }
@@ -157,21 +119,35 @@ int inode_grow(inode_t *nodep, int size, bool_t zero_out)
   inode_t *last_childp = inode_last_child(nodep);
   int last_child_used_blocks = bytes_to_blocks(last_childp->size);
 
+  printf("LAST CHILD CURRENT SIZE: %d\n", last_childp->size);
+
+  printf("NEW BLOCKS NEEDED: %d\n", bytes_to_blocks(last_childp->size + size));
+
   // If no more blocks are needed simply increase the size.
   if (bytes_to_blocks(last_childp->size + size) == last_child_used_blocks)
   {
+    printf("JUST ADDING IN\n");
     last_childp->size += size;
     return size;
   }
 
+  printf("GROWING FROM: %d\n", last_child_used_blocks);
+
   // If a local slot exists put the new block into it.
   if (last_child_used_blocks < INODE_LOCAL_BLOCK_CAP)
   {
+    printf("USING SLOT\n");
+
     // Allocate the new block and ensure there is enough storage.
     if ((last_childp->blocks[last_child_used_blocks] = block_alloc()) < 0)
     {
       return -ENOSPC;
     }
+
+    // Grow the last child's size by whatever this increment was.
+    last_childp->size += MIN(BLOCK_SIZE, size);
+
+    printf("MADE NEW BLOCK (index = %d): %d\n", last_child_used_blocks, last_childp->blocks[last_child_used_blocks]);
 
     // Recursively grow the inode starting at the last child as a performance shortcut. If the
     // size is not greater than the size of a block nothing will happen.
@@ -180,8 +156,9 @@ int inode_grow(inode_t *nodep, int size, bool_t zero_out)
       return -ENOSPC;
     }
 
-    // Grow the last child's size by whatever this increment was.
-    last_childp->size += MIN(BLOCK_SIZE, size);
+    printf("GOT HERE, GREW INODE\n");
+
+    // Return the size we successfully incremented by.
     return size;
   }
 
@@ -276,4 +253,67 @@ int inode_get_bnum(inode_t *nodep, int file_bnum)
 
   // Recursively look into the child.
   return inode_get_bnum(inode_get(nodep->next), file_bnum - INODE_LOCAL_BLOCK_CAP);
+}
+
+void inode_print(inode_t *nodep)
+{
+  assert(nodep);
+
+  printf(
+      "INODE(r=%d, m=%o, s=%d, b={%d, %d, %d, %d}, n=%d)\n",
+      nodep->refs, nodep->mode, nodep->size,
+      nodep->blocks[0], nodep->blocks[1], nodep->blocks[2], nodep->blocks[3],
+      nodep->next);
+}
+
+void inode_print_tree(inode_t *nodep)
+{
+  assert(nodep);
+
+  int i, j;
+
+  for (i = 0;; i++)
+  {
+    if (i > 0)
+    {
+      repeat_print(" ", 3 * (i - 1));
+      printf(" \u2514\u2500");
+    }
+
+    inode_print(nodep);
+
+    if (nodep->next < 0)
+    {
+      return;
+    }
+
+    nodep = inode_get(nodep->next);
+  }
+}
+
+void inode_print_blocks_label_offset(inode_t *nodep, int label_offset)
+{
+  int block_num;
+
+  for (int i = 0; i < INODE_LOCAL_BLOCK_CAP; i++)
+  {
+    block_num = nodep->blocks[i];
+
+    if (block_num >= 0)
+    {
+      printf("\033[0;1;92mBLOCK %d:\033[0m\n", i + label_offset);
+      block_print(block_num);
+    }
+  }
+
+  if (nodep->next >= 0)
+  {
+    inode_t *nextp = inode_get(nodep->next);
+    inode_print_blocks_label_offset(nextp, label_offset + INODE_LOCAL_BLOCK_CAP);
+  }
+}
+
+void inode_print_blocks(inode_t *nodep)
+{
+  inode_print_blocks_label_offset(nodep, 0);
 }
