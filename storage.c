@@ -120,7 +120,7 @@ int storage_parent_dir_inum_for_path(const char *path)
   assert(path);
 
   // Start from the root.
-  return 0;//parent_inum_for_path_in(ROOT_INUM, path);
+  return parent_inum_for_path_in(ROOT_INUM, path);
 }
 
 int storage_access(const char *path, int mode)

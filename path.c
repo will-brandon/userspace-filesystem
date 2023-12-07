@@ -68,9 +68,40 @@ int inum_for_path_in(int dinum, const char *path)
   assert(path);
 
   // Split the path string into components and delegate to the list version of this function.
-  slist_t *path_components = slist_explode(path, '/');
-  int inum = inum_for_path_comps_in(dinum, path_components);
-  slist_free(path_components);
+  slist_t *comps = slist_explode(path, '/');
+  int inum = inum_for_path_comps_in(dinum, comps);
+  slist_free(comps);
 
+  // Return the inum or error code.
+  return inum;
+}
+
+int parent_inum_for_path_in(int dinum, const char *path)
+{
+  assert(dinum >= 0);
+  assert(inode_exists(dinum));
+  assert(inode_get(dinum)->mode & INODE_DIR);
+  assert(path);
+
+  // Split the path string into components.
+  slist_t *comps = slist_explode(path, '/');
+
+  // If the path is either
+  if (!comps || !comps->next)
+  {
+    return -ENOENT;
+  }
+
+  slist_t *comp = comps;
+
+  while (comp)
+  {
+
+  }
+
+  int inum = parent_inum_for_path_comps_in(dinum, comps);
+  slist_free(comps);
+
+  // Return the inum or error code.
   return inum;
 }
