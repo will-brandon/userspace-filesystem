@@ -105,7 +105,7 @@ int inode_free(int inum)
   bitmap_put(block_inode_bitmap_start(), inum, 0);
 }
 
-int inode_grow(inode_t *nodep, int size, bool_t zero_out)
+int inode_grow(inode_t *nodep, int size)
 {
   assert(nodep);
 
@@ -127,10 +127,6 @@ int inode_grow(inode_t *nodep, int size, bool_t zero_out)
   // If no more blocks are needed simply increase the size.
   if (bytes_to_blocks(last_childp->size + size) == last_child_used_blocks)
   {
-    if (zero_out)
-    {
-      memset(inode_end(nodep), 0, size);
-    }
     
     last_childp->size += size;
     return size;
@@ -145,25 +141,14 @@ int inode_grow(inode_t *nodep, int size, bool_t zero_out)
       return -ENOSPC;
     }
 
-    // THIS NEEDS ADJUSTMENT!!! IT OVERWRITES BAD BLOCKS!!!!
-    if (zero_out)
-    {
-      memset(inode_end(nodep), 0, size);
-    }
-
     last_childp->blocks[last_child_used_blocks] = bnum;
-
-    if (zero_out)
-    {
-      memset(inode_end(nodep), 0, size);
-    }
 
     // Grow the last child's size by whatever this increment was.
     last_childp->size += MIN(BLOCK_SIZE, size);
 
     // Recursively grow the inode starting at the last child as a performance shortcut. If the
     // size is not greater than the size of a block nothing will happen.
-    if (inode_grow(last_childp, size - BLOCK_SIZE, zero_out) < 0)
+    if (inode_grow(last_childp, size - BLOCK_SIZE) < 0)
     {
       return -ENOSPC;
     }
@@ -184,13 +169,35 @@ int inode_grow(inode_t *nodep, int size, bool_t zero_out)
   }
 
   // Recursively perform the growth in this child inode with the remaining size.
-  if (inode_grow(inode_get(last_childp->next), remaining_size_change, zero_out) < 0)
+  if (inode_grow(inode_get(last_childp->next), remaining_size_change) < 0)
   {
     return -ENOSPC;
   }
 
   // Return the size.
   return size;
+}
+
+int inode_grow_zero(inode_t *nodep, int size)
+{
+  assert(nodep);
+  
+  int start_size = inode_total_size(nodep);
+  int growth_size = inode_grow(nodep, size);
+
+  if (growth_size < 0)
+  {
+    return growth_size;
+  }
+
+  int rv = inode_fill(nodep, start_size, 0x0, growth_size);
+
+  if (rv < 0)
+  {
+    return rv;
+  }
+
+  return growth_size;
 }
 
 int inode_shrink(inode_t *nodep, int size)
@@ -272,6 +279,26 @@ void *inode_end(inode_t *nodep)
   int last_block_size = total_size % BLOCK_SIZE;
   int last_block_num = inode_get_bnum(nodep, total_size / BLOCK_SIZE);
   return block_get(last_block_num) + last_block_size;
+}
+
+int inode_fill(inode_t *nodep, int offset, byte_t byte, int size)
+{
+  // Ensure the size is a worthwhile quantity,
+  if (size < 1)
+  {
+    return 0;
+  }
+
+  // Calculate the total size of the inode and how many bytes can actually be written given its
+  // size.
+  int total_size = inode_total_size(nodep);
+  size = MIN(total_size - offset, size);
+
+  //int bnum = inode_get_bnum(nodep, total_size / BLOCK_SIZE);
+  //int block_offset = total_size % BLOCK_SIZE;
+  //inode_get_bnum
+
+  return size;
 }
 
 void inode_print(inode_t *nodep)

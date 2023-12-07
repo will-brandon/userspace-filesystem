@@ -27,8 +27,8 @@ void test(void)
 
   inode_t *nodep = inode_get(inum);
   printf("\033[32mGROWING\033[0m\n");
-  inode_grow(nodep, 1, FALSE);
-  inode_grow(nodep, BLOCK_SIZE, TRUE);
+  inode_grow(nodep, 1);
+  inode_grow_zero(nodep, BLOCK_SIZE);
 
   inode_print_blocks(nodep);
 
@@ -470,7 +470,7 @@ int storage_truncate(const char *path, off_t size)
   // Grow the inode if the delta > 0.
   if (size_delta > 0)
   {
-    rv = inode_grow(nodep, size_delta, TRUE);
+    rv = inode_grow_zero(nodep, size_delta);
   }
   // Shrink the inode if the delta < 0.
   else if (size_delta < 0)
