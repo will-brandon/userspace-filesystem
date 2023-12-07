@@ -18,13 +18,13 @@ slist_t *path_explode(const char *path)
   return slist_explode(path, PATH_DELIM);
 }
 
-int inum_for_path_comps_in(int dinum, slist_t *comps)
+int inum_for_path_comps_in(int search_root_inum, slist_t *comps)
 {
-  assert(dinum >= 0);
-  assert(inode_exists(dinum));
+  assert(search_root_inum >= 0);
+  assert(inode_exists(search_root_inum));
 
   // Get the node.
-  inode_t *dnodep = inode_get(dinum);
+  inode_t *dnodep = inode_get(search_root_inum);
 
   assert(dnodep->mode & INODE_DIR);
 
@@ -43,10 +43,10 @@ int inum_for_path_comps_in(int dinum, slist_t *comps)
   {
     if (comps->next)
     {
-      return inum_for_path_comps_in(dinum, comps->next);
+      return inum_for_path_comps_in(search_root_inum, comps->next);
     }
 
-    return dinum;
+    return search_root_inum;
   }
 
   int entry_inum;
@@ -68,16 +68,16 @@ int inum_for_path_comps_in(int dinum, slist_t *comps)
   return inum_for_path_comps_in(entry_inum, comps->next);
 }
 
-int inum_for_path_in(int dinum, const char *path)
+int inum_for_path_in(int search_root_inum, const char *path)
 {
-  assert(dinum >= 0);
-  assert(inode_exists(dinum));
-  assert(inode_get(dinum)->mode & INODE_DIR);
+  assert(search_root_inum >= 0);
+  assert(inode_exists(search_root_inum));
+  assert(inode_get(search_root_inum)->mode & INODE_DIR);
   assert(path);
 
   // Split the path string into components and delegate to the list version of this function.
   slist_t *comps = path_explode(path);
-  int inum = inum_for_path_comps_in(dinum, comps);
+  int inum = inum_for_path_comps_in(search_root_inum, comps);
   slist_free(comps);
 
   // Return the inum or error code.
@@ -105,4 +105,29 @@ int path_comps_pop(slist_t *comps, const char **last_comp_namep)
   }
 
   return last_comp_i;
+}
+
+int path_parent_child_in(int search_root_inum, const char *path, const char **child_namep)
+{
+  // Store the name string of the child, but note that it is a pointer to the component data that
+  // will later be freed. This must be duplicated.
+  const char *child_name_tethered;
+
+  // Split the path into its components, then get the child name and the index of that child name.
+  slist_t *path_comps = path_explode(path);
+  int name_comp_i = path_comps_pop(path_comps, &child_name_tethered);
+
+  // Copy the path to the parent directory into a new component list and get the inum.
+  slist_t *parent_path_comps = slist_copy(path_comps, name_comp_i);
+  int parent_inum = inum_for_path_comps_in(search_root_inum, parent_path_comps);
+
+  // Make a copy of the tethered name.
+  *child_namep = strdup(child_name_tethered);
+
+  // Free the path components.
+  slist_free(path_comps);
+  slist_free(parent_path_comps);
+
+  // Return the parent directory's inum.
+  return parent_inum;
 }

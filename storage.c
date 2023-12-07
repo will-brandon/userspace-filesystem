@@ -216,10 +216,8 @@ int storage_mknod(const char *path, int mode)
   // inum so we can add an entry into the directory table.
 
   const char *name;
-  slist_t *path_comps = path_explode(path);
-  int name_comp_i = path_comps_pop(path_comps, &name);
-  slist_t *parent_path_comps = slist_copy(path_comps, name_comp_i);
-  int parent_inum = inum_for_path_comps_in(ROOT_INUM, parent_path_comps);
+
+  int parent_inum = path_parent_child_in(ROOT_INUM, path, &name);
   
   // It should be impossile at this point for the parent to not be a directory.
   assert(inode_get(parent_inum)->mode & INODE_DIR);
@@ -237,9 +235,7 @@ int storage_mknod(const char *path, int mode)
   int rv = directory_add_entry(parent_inum, name, inum, TRUE);
   inode_get(inum)->refs++;
 
-  // Free the path components.
-  slist_free(path_comps);
-  slist_free(parent_path_comps);
+  free((void *) name);
 
   // Set the mode of the node and return the success code 0.
   inode_get(inum)->mode = mode;
