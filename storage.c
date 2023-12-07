@@ -78,9 +78,6 @@ void storage_init(const char *host_path)
   // Create a memory map and initialize the disk blocks and.
   block_init(host_path);
 
-  printf("\033[0;1;31mREMEMBER TO REMOVE THIS CLEAR FUNCTION DUMBASS!\033[0m\n");
-  storage_clear();
-
   // Allocate the root inode and make it a directory if it doesn't already exist. Note that this
   // relies on ROOT_INUM being 0. Otherwise, there is no guarantee ROOT_INUM will be allocated.
   if (!inode_exists(ROOT_INUM))
@@ -92,7 +89,7 @@ void storage_init(const char *host_path)
   // Initialize a pointer to the root node structure.
   root_nodep = inode_get(ROOT_INUM);
 
-  test();
+  //test();
 }
 
 void storage_deinit(void)

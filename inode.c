@@ -137,6 +137,8 @@ int inode_free(int inum)
   assert(inum < MAX_INODE_COUNT);
   assert(inode_exists(inum));
 
+  printf("FREEE\n");
+
   // Set the inode to unused.
   bitmap_put(block_inode_bitmap_start(), inum, 0);
 }
