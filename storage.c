@@ -297,6 +297,10 @@ int storage_link(const char *from, const char *to)
     return to_parent_inum;
   }
 
+  // It should be impossile at this point for either of the parents to not be a directory.
+  assert(inode_get(from_parent_inum)->mode & INODE_DIR);
+  assert(inode_get(to_parent_inum)->mode & INODE_DIR);
+
   // Add the directory entry. Hard links arent allowed for directories so we don't have to worry
   // about adding the .. (the last FALSE argument doesn't matter).
   int rv = directory_add_entry(to_parent_inum, to_name, inum, FALSE);
@@ -319,6 +323,53 @@ int storage_link(const char *from, const char *to)
 int storage_unlink(const char *path)
 {
   assert(path);
+
+  // Get the inum of the inode at the path.
+  int inum = storage_inum_for_path(path);
+  
+  // Ensure the inode exists.
+  if (inum < 0)
+  {
+    return -ENOENT;
+  }
+
+  // Get the name of the child and the inum of the parent directory. We know the parent must exist
+  // since the inode at the whole path exists.
+  const char *name;
+  int parent_inum = storage_path_parent_child(path, &name);
+
+  inode_t *parent_node = inode_get(parent_inum);
+  
+  // It should be impossile at this point for the parent to not be a directory.
+  assert(parent_node->mode & INODE_DIR);
+
+  // Remove the directory entry. Hard links arent allowed for directories so we don't have to worry
+  // about removing the .. (the last FALSE argument doesn't matter).
+  int rv = directory_delete(parent_node, name, FALSE);
+  free((void *) name);
+
+  // Return any errors that may have occured attempting to remove the directory entry.
+  if (rv < 0)
+  {
+    return rv;
+  }
+
+  directory_print(parent_node, TRUE);
+
+  // Decrease the ref counter.
+  int refs = --(inode_get(inum)->refs);
+
+  // If the ref counter is at least 1, return successfully.
+  if (refs > 0)
+  {
+    return 0;
+  }
+  
+  // Free the inode since the ref count dropped below 1.
+  rv = inode_free(inum);
+
+  // If the inode could't be freed, return the error code.
+  return rv < 0 ? rv : 0;
 }
 
 int storage_rename(const char *from, const char *to)

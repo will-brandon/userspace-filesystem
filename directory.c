@@ -206,7 +206,10 @@ int directory_delete(inode_t *dnodep, const char *name, bool_t back_entry_in_chi
   dirent_t *entryp;
   inode_t *entry_nodep;
 
-  for (int entry_num = 0; entry_num < directory_total_entry_count(dnodep); entry_num++)
+  int entry_num;
+  int total_entry_count = directory_total_entry_count(dnodep);
+
+  for (entry_num = 0; entry_num < total_entry_count; entry_num++)
   {
     entryp = directory_get_entry(dnodep, entry_num);
 
@@ -222,7 +225,18 @@ int directory_delete(inode_t *dnodep, const char *name, bool_t back_entry_in_chi
         directory_delete(entry_nodep, "..", FALSE);
       }
 
-      return entry_num;
+      // If the last entry was the one removed, shrink the directory.
+      if (entry_num == total_entry_count - 1)
+      {
+        int rv = inode_shrink(dnodep, sizeof(dirent_t));
+
+        if (rv < 0)
+        {
+          return rv;
+        }
+      }
+
+      return 0;
     }
   }
 
@@ -235,12 +249,17 @@ slist_t *directory_list(inode_t *dnodep)
   assert(dnodep->mode & INODE_DIR);
 
   slist_t *list = NULL;
-  const char *name;
+  dirent_t *entryp;
 
   for (int entry_num = directory_total_entry_count(dnodep) - 1; entry_num >= 0; entry_num--)
   {
-    name = directory_get_entry(dnodep, entry_num)->name;
-    list = slist_cons(name, list);
+    entryp = directory_get_entry(dnodep, entry_num);
+
+    // Ensure the inum is at least 0.
+    if (entryp->inum >= 0)
+    {
+      list = slist_cons(entryp->name, list);
+    }
   }
 
   return list;
