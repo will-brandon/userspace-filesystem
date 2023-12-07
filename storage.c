@@ -38,7 +38,7 @@ void test(void)
   }
   
   directory_add_entry(ROOT_INUM, "code", inums[0], TRUE);
-  directory_add_entry(ROOT_INUM, "school stuff", inums[2], TRUE);
+  directory_add_entry(ROOT_INUM, "school-stuff", inums[2], TRUE);
   directory_add_entry(ROOT_INUM, "README.md", inums[1], TRUE);
   
   directory_add_entry(inums[0], "main.c", inums[1], TRUE);
@@ -218,8 +218,11 @@ int storage_mknod(const char *path, int mode)
   const char *name;
   slist_t *path_comps = path_explode(path);
   int name_comp_i = path_comps_pop(path_comps, &name);
-  //slist_t *parent_path_comps = slist_until(path_comps, name_comp_i);
-  //int parent_inum = inum_for_path_comps_in(ROOT_INUM, parent_path_comps);
+  slist_t *parent_path_comps = slist_copy(path_comps, name_comp_i);
+  int parent_inum = inum_for_path_comps_in(ROOT_INUM, parent_path_comps);
+  
+  // It should be impossile at this point for the parent to not be a directory.
+  assert(inode_get(parent_inum)->mode & INODE_DIR);
 
   // Allocate a new node.
   inum = inode_alloc();
@@ -230,11 +233,13 @@ int storage_mknod(const char *path, int mode)
     return inum;
   }
 
-  //directory_add_entry();
+  // Add the directory entry and increase the ref counter.
+  int rv = directory_add_entry(parent_inum, name, inum, TRUE);
+  inode_get(inum)->refs++;
 
   // Free the path components.
   slist_free(path_comps);
-  //slist_free(parent_path_comps);
+  slist_free(parent_path_comps);
 
   // Set the mode of the node and return the success code 0.
   inode_get(inum)->mode = mode;

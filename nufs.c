@@ -210,8 +210,9 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 int nufs_chmod(const char *path, mode_t mode)
 {
   printf("chmod(%s, %04o)\n", path, mode);
-  int rv = -1;
-  return rv;
+  
+  // We are not implementing this, so imply return 0.
+  return 0;
 }
 
 // This is called on open, but doesn't need to do much
@@ -221,8 +222,9 @@ int nufs_chmod(const char *path, mode_t mode)
 int nufs_open(const char *path, struct fuse_file_info *fi)
 {
   printf("open(%s)\n", path);
-  int rv = 0;
-  return rv;
+  
+  // We are not implementing this, so imply return 0.
+  return 0;
 }
 
 // Update the timestamps on a file or directory.
@@ -230,8 +232,9 @@ int nufs_utimens(const char *path, const struct timespec ts[2])
 {
   printf("utimens(%s, [%ld, %ld; %ld %ld])\n", path, ts[0].tv_sec, ts[0].tv_nsec, ts[1].tv_sec,
          ts[1].tv_nsec);
-  int rv = -1;
-  return rv;
+
+  // We are not implementing this, so imply return 0.
+  return 0;
 }
 
 // Extended operations
@@ -239,8 +242,9 @@ int nufs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_info *fi,
                unsigned int flags, void *data)
 {
   printf("ioctl(%s, %d, ...)\n", path, cmd);
-  int rv = -1;
-  return rv;
+  
+  // We are not implementing this, so imply return 0.
+  return 0;
 }
 
 void nufs_init_ops(struct fuse_operations *ops)
