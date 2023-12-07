@@ -115,6 +115,15 @@ int storage_inum_for_path(const char *path)
   return inum_for_path_in(ROOT_INUM, path);
 }
 
+int storage_path_parent_child(const char *path, const char **child_namep)
+{
+  assert(path);
+  assert(child_namep);
+  
+  // Start from the root.
+  return path_parent_child_in(ROOT_INUM, path, child_namep);
+}
+
 int storage_access(const char *path, int mode)
 {
   assert(path);
@@ -215,13 +224,6 @@ int storage_mknod(const char *path, int mode)
   // the directory, whether or not it is canonical does not matter. We will just need to access its
   // inum so we can add an entry into the directory table.
 
-  const char *name;
-
-  int parent_inum = path_parent_child_in(ROOT_INUM, path, &name);
-  
-  // It should be impossile at this point for the parent to not be a directory.
-  assert(inode_get(parent_inum)->mode & INODE_DIR);
-
   // Allocate a new node.
   inum = inode_alloc();
 
@@ -231,11 +233,28 @@ int storage_mknod(const char *path, int mode)
     return inum;
   }
 
-  // Add the directory entry and increase the ref counter.
-  int rv = directory_add_entry(parent_inum, name, inum, TRUE);
-  inode_get(inum)->refs++;
+  // Get the name of the child and the inum of the parent directory. We know the parent must exist
+  // since the inode at the whole path exists.
+  const char *name;
+  int parent_inum = storage_path_parent_child(path, &name);
+  
+  // It should be impossile at this point for the parent to not be a directory.
+  assert(inode_get(parent_inum)->mode & INODE_DIR);
 
+  // Add the directory entry and free the name buffer now that it has been copied.
+  int rv = directory_add_entry(parent_inum, name, inum, TRUE);
   free((void *) name);
+
+  // Return any errors that may have occured attempting to add the directory entry. Ensure we free
+  // the inode we created.
+  if (rv < 0)
+  {
+    inode_free(inum);
+    return rv;
+  }
+
+  // Increase the ref counter.
+  inode_get(inum)->refs++;
 
   // Set the mode of the node and return the success code 0.
   inode_get(inum)->mode = mode;
@@ -262,7 +281,32 @@ int storage_link(const char *from, const char *to)
     return -EEXIST;
   }
 
-  return 0;
+  // Get the name of the child and the inum of the parent directories. We already ensured the "from"
+  // parent exists when we found the inode. The "to" parent may not, we must check.
+  const char *from_name, *to_name;
+  int from_parent_inum = storage_path_parent_child(from, &from_name);
+  int to_parent_inum = storage_path_parent_child(to, &to_name);
+
+  // Ensure the "to" parent was properly retrieved. If not, return the error.
+  if (to_parent_inum < 0)
+  {
+    // Be sure we still free the name strings.
+    free((void *) from_name);
+    free((void *) to_name);
+
+    return to_parent_inum;
+  }
+
+  // Add the directory entry. Hard links arent allowed for directories so we don't have to worry
+  // about adding the .. (the last FALSE argument doesn't matter).
+  int rv = directory_add_entry(to_parent_inum, to_name, inum, FALSE);
+
+  // Free the name strings.
+  free((void *) from_name);
+  free((void *) to_name);
+
+  // If the add entry failed return its code. Otherwise, return 0.
+  return rv < 0 ? rv : 0;
 }
 
 int storage_unlink(const char *path)

@@ -86,6 +86,8 @@ int inum_for_path_in(int search_root_inum, const char *path)
 
 int path_comps_pop(slist_t *comps, const char **last_comp_namep)
 {
+  assert(last_comp_namep);
+  
   int i = -1;
   int last_comp_i = -1;
   *last_comp_namep = NULL;
@@ -109,6 +111,11 @@ int path_comps_pop(slist_t *comps, const char **last_comp_namep)
 
 int path_parent_child_in(int search_root_inum, const char *path, const char **child_namep)
 {
+  assert(search_root_inum >= 0);
+  assert(inode_exists(search_root_inum));
+  assert(path);
+  assert(child_namep);
+
   // Store the name string of the child, but note that it is a pointer to the component data that
   // will later be freed. This must be duplicated.
   const char *child_name_tethered;
