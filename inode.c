@@ -119,35 +119,39 @@ int inode_grow(inode_t *nodep, int size, bool_t zero_out)
   inode_t *last_childp = inode_last_child(nodep);
   int last_child_used_blocks = bytes_to_blocks(last_childp->size);
 
-  printf("LAST CHILD CURRENT SIZE: %d\n", last_childp->size);
-
-  printf("NEW BLOCKS NEEDED: %d\n", bytes_to_blocks(last_childp->size + size));
+  // This will be the particular single block being expanded by this recursive iteration. Note that
+  // each recursive iteration will only actually update one block before recurring to a separate
+  // block.
+  int block_num;
 
   // If no more blocks are needed simply increase the size.
   if (bytes_to_blocks(last_childp->size + size) == last_child_used_blocks)
   {
-    printf("JUST ADDING IN\n");
+    if (zero_out)
+    {
+      block_num = last_childp->blocks[last_child_used_blocks - 1];
+      int block_prev_size = last_childp->size % BLOCK_SIZE;
+      void *fill_start = block_get(block_num) + block_prev_size;
+      memset(fill_start, 0, size);
+    }
+    
     last_childp->size += size;
     return size;
   }
 
-  printf("GROWING FROM: %d\n", last_child_used_blocks);
-
   // If a local slot exists put the new block into it.
   if (last_child_used_blocks < INODE_LOCAL_BLOCK_CAP)
   {
-    printf("USING SLOT\n");
-
     // Allocate the new block and ensure there is enough storage.
-    if ((last_childp->blocks[last_child_used_blocks] = block_alloc()) < 0)
+    if ((block_num = block_alloc()) < 0)
     {
       return -ENOSPC;
     }
 
+    last_childp->blocks[last_child_used_blocks] = block_num;
+
     // Grow the last child's size by whatever this increment was.
     last_childp->size += MIN(BLOCK_SIZE, size);
-
-    printf("MADE NEW BLOCK (index = %d): %d\n", last_child_used_blocks, last_childp->blocks[last_child_used_blocks]);
 
     // Recursively grow the inode starting at the last child as a performance shortcut. If the
     // size is not greater than the size of a block nothing will happen.
@@ -155,8 +159,6 @@ int inode_grow(inode_t *nodep, int size, bool_t zero_out)
     {
       return -ENOSPC;
     }
-
-    printf("GOT HERE, GREW INODE\n");
 
     // Return the size we successfully incremented by.
     return size;

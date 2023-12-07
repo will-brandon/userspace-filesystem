@@ -21,16 +21,19 @@ static inode_t *root_nodep;
 
 void test(void)
 {
-  //memset(block_get(0) + RESERVED_SIZE, 0, NUFS_SIZE - RESERVED_SIZE);
+  memset(block_get(0) + RESERVED_SIZE, 0xCC, NUFS_SIZE - RESERVED_SIZE);
 
   int inum = inode_alloc();
 
   inode_t *nodep = inode_get(inum);
   printf("\033[32mGROWING\033[0m\n");
-  inode_grow(nodep, BLOCK_SIZE * 4 + 1, FALSE);
+  inode_grow(nodep, 16, FALSE);
+  inode_grow(nodep, 16, TRUE);
+  inode_grow(nodep, 32, FALSE);
+
+  inode_print_blocks(nodep);
 
   inode_print_tree(nodep);
-
   inode_free(inum);
 
   /*
