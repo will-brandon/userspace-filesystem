@@ -24,6 +24,9 @@ typedef struct inode
   int next;                          // -1 if no other inode, otherwise inum of next inode
 } inode_t;
 
+// Define a block iterator for reading, writing, filling, etc.
+typedef int (* block_iter_t)(void *buf, void *start, int size);
+
 bool_t inode_exists(int inum);
 inode_t *inode_get(int inum);
 void inode_reset(inode_t *nodep);
@@ -37,7 +40,8 @@ int inode_grow_zero(inode_t *nodep, int size);
 int inode_shrink(inode_t *nodep, int size);
 int inode_get_bnum(inode_t *nodep, int file_bnum);
 void *inode_end(inode_t *nodep);
-int inode_fill(inode_t *nodep, int offset, byte_t byte, int size);
+int inode_block_iter(inode_t *nodep, block_iter_t iter, void *buf, int offset, int size);
+int inode_fill(inode_t *nodep, int offset, byte_t fill, int size);
 void inode_print(inode_t *nodep);
 void inode_print_tree(inode_t *nodep);
 void inode_print_blocks(inode_t *nodep);

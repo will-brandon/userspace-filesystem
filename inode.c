@@ -274,6 +274,8 @@ int inode_get_bnum(inode_t *nodep, int file_bnum)
 
 void *inode_end(inode_t *nodep)
 {
+  assert(nodep);
+
   // Calculate a pointer to the first byte directly after the end of the last byte in the file.
   int total_size = inode_total_size(nodep);
   int last_block_size = total_size % BLOCK_SIZE;
@@ -281,39 +283,89 @@ void *inode_end(inode_t *nodep)
   return block_get(last_block_num) + last_block_size;
 }
 
-int inode_fill(inode_t *nodep, int offset, byte_t byte, int size)
+int inode_block_iter(inode_t *nodep, block_iter_t iter, void *buf, int offset, int size)
 {
+  assert(nodep);
+  assert(iter);
+
   // Ensure the size is a worthwhile quantity,
   if (size < 1)
   {
     return 0;
   }
 
-  // Calculate the total size of the inode and how many bytes can actually be filled given its size.
+  // Calculate the total size of the inode and how many bytes can actually be iterated over given
+  // its size.
   int total_size = inode_total_size(nodep);
   size = MIN(total_size - offset, size);
 
-  // Get the first block number and offset.
+  // Determine the offset and fill size for the first block. For any future blocks, the offset will
+  // always be 0.
   int remaining_size = size;
   int file_bnum = offset / BLOCK_SIZE;
   offset %= BLOCK_SIZE;
   void *block_start = block_get(inode_get_bnum(nodep, file_bnum));
-  int block_fill_size = MIN(BLOCK_SIZE - offset, remaining_size);
+  int block_iter_size = MIN(BLOCK_SIZE - offset, remaining_size);
 
-  memset(block_start + offset, byte, block_fill_size);
-  remaining_size -= block_fill_size;
+  // Call the iterator on the first block. If the return value is an error code, return the code.
+  int rv = iter(buf, block_start + offset, block_iter_size);
 
-  while (remaining_size > 0)
+  if (rv < 0)
   {
-    file_bnum++;
-    block_start = block_get(inode_get_bnum(nodep, file_bnum));
-    block_fill_size = MIN(BLOCK_SIZE, remaining_size);
-
-    memset(block_start, byte, block_fill_size);
-    remaining_size -= block_fill_size;
+    return rv;
   }
 
-  return size;
+  // Decrease the remianing size to iterate over.
+  remaining_size -= block_iter_size;
+
+  // If more blocks remain, iterate over each one. 
+  while (remaining_size > 0)
+  {
+    // Find the size to iterate with.
+    file_bnum++;
+    block_start = block_get(inode_get_bnum(nodep, file_bnum));
+    block_iter_size = MIN(BLOCK_SIZE, remaining_size);
+
+    // Call the iterator (we now know the offset must be 0 every time since it is not the first
+    // block). If the return value is an error code, return the code.
+    rv = iter(buf, block_start, block_iter_size);
+
+    if (rv < 0)
+    {
+      return rv;
+    }
+
+    // Decrease the remianing size to iterate over.
+    remaining_size -= block_iter_size;
+  }
+
+  // Return the return value of the last iterator call.
+  return rv;
+}
+
+typedef struct inode_fill_iter_data
+{
+  byte_t fill;
+  int size;
+} inode_fill_iter_data_t;
+
+int inode_fill_iter(void *buf, void *start, int size)
+{
+  assert(buf);
+
+  inode_fill_iter_data_t *datap = buf;
+  memset(start, datap->fill, size);
+
+  return datap->size;
+}
+
+int inode_fill(inode_t *nodep, int offset, byte_t fill, int size)
+{
+  assert(nodep);
+
+  // Create the data pass structure and iterate with the fill iterator function.
+  inode_fill_iter_data_t data = {fill, size};
+  return inode_block_iter(nodep, &inode_fill_iter, &data, offset, size);
 }
 
 void inode_print(inode_t *nodep)

@@ -509,6 +509,7 @@ int storage_write(const char *path, const char *buf, size_t size, off_t offset)
 int storage_list(const char *dpath, slist_t **namesp)
 {
   assert(dpath);
+  assert(namesp);
 
   // Lookup the inode at the given path.
   int inum = storage_inum_for_path(dpath);
