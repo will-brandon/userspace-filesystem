@@ -16,22 +16,68 @@
 
 slist_t *slist_cons(const char *text, slist_t *rest)
 {
-  slist_t *xs = malloc(sizeof(slist_t));
-  xs->data = strdup(text);
-  xs->next = rest;
-  return xs;
+  slist_t *sl = malloc(sizeof(slist_t));
+  sl->data = strdup(text);
+  sl->next = rest;
+  return sl;
 }
 
-void slist_free(slist_t *xs)
+void slist_free(slist_t *sl)
 {
-  if (xs == NULL)
+  if (!sl)
   {
     return;
   }
 
-  slist_free(xs->next);
-  free(xs->data);
-  free(xs);
+  slist_free(sl->next);
+  free(sl->data);
+  free(sl);
+}
+
+int slist_size(slist_t *sl)
+{
+  if (!sl)
+  {
+    return 0;
+  }
+
+  return 1 + slist_size(sl->next);
+}
+
+slist_t *slist_copy(slist_t *sl, int end)
+{
+  if (!sl || end <= 0)
+  {
+    return NULL;
+  }
+
+  slist_t *subset = slist_cons(sl->data, NULL);
+  slist_t *head = subset;
+
+  for (int i = 1; i < end && sl->next; i++)
+  {
+    sl = sl->next;
+    head->next = slist_cons(sl->data, NULL);
+    head = head->next;
+  }
+
+  return subset;
+}
+
+void slist_print(slist_t *sl, const char *delim)
+{
+  if (sl == NULL)
+  {
+    return;
+  }
+
+  printf("%s", sl->data);
+
+  if (sl->next)
+  {
+    printf("%s", delim);
+    slist_print(sl->next, delim);
+  }
 }
 
 slist_t *slist_explode(const char *text, char delim)
@@ -62,30 +108,4 @@ slist_t *slist_explode(const char *text, char delim)
   part[next] = 0;
 
   return slist_cons(part, rest);
-}
-
-int slist_size(slist_t *xs)
-{
-  if (!xs)
-  {
-    return 0;
-  }
-
-  return 1 + slist_size(xs->next);
-}
-
-void slist_print(slist_t *xs, const char *delim)
-{
-  if (xs == NULL)
-  {
-    return;
-  }
-
-  printf("%s", xs->data);
-
-  if (xs->next)
-  {
-    printf("%s", delim);
-    slist_print(xs->next, delim);
-  }
 }

@@ -28,9 +28,16 @@ slist_t *slist_cons(const char *text, slist_t *rest);
 /** 
  * Free the given string list.
  *
- * @param xs List of strings to free.
+ * @param sl List of strings to free.
  */
-void slist_free(slist_t *xs);
+void slist_free(slist_t *sl);
+
+int slist_size(slist_t *sl);
+
+// Allocates a new subset slist until the end index exclusive.
+slist_t *slist_copy(slist_t *sl, int end);
+
+void slist_print(slist_t *sl, const char *delim);
 
 /**
  * Split the given on the given delimiter into a list of strings.
@@ -43,9 +50,5 @@ void slist_free(slist_t *xs);
  * @return a list containing all the substrings
  */
 slist_t *slist_explode(const char *text, char delim);
-
-int slist_size(slist_t *xs);
-
-void slist_print(slist_t *xs, const char *delim);
 
 #endif

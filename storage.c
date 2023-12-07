@@ -55,14 +55,6 @@ void test(void)
   directory_add_entry(inums[6], "hw3.pdf", inums[15], TRUE);
   directory_add_entry(inums[6], "01234567890123456789012345678901234567890123456789012345678this will all be truncated", inums[8], TRUE);
 
-  slist_t *comps = slist_explode("//hello///.", '/');
-  const char *last_comp;
-  int i = path_comps_pop(comps, &last_comp);
-
-  printf("i=%d, str='%s'\n", i, last_comp);
-
-  slist_free(comps);
-  
   /*
   int new_file_count = 15;
 
@@ -223,6 +215,12 @@ int storage_mknod(const char *path, int mode)
   // the directory, whether or not it is canonical does not matter. We will just need to access its
   // inum so we can add an entry into the directory table.
 
+  const char *name;
+  slist_t *path_comps = path_explode(path);
+  int name_comp_i = path_comps_pop(path_comps, &name);
+  //slist_t *parent_path_comps = slist_until(path_comps, name_comp_i);
+  //int parent_inum = inum_for_path_comps_in(ROOT_INUM, parent_path_comps);
+
   // Allocate a new node.
   inum = inode_alloc();
 
@@ -233,6 +231,10 @@ int storage_mknod(const char *path, int mode)
   }
 
   //directory_add_entry();
+
+  // Free the path components.
+  slist_free(path_comps);
+  //slist_free(parent_path_comps);
 
   // Set the mode of the node and return the success code 0.
   inode_get(inum)->mode = mode;

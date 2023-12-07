@@ -10,6 +10,14 @@
 #include "inode.h"
 #include "directory.h"
 
+slist_t *path_explode(const char *path)
+{
+  assert(path);
+
+  // Simply splot the path by slashes.
+  return slist_explode(path, PATH_DELIM);
+}
+
 int inum_for_path_comps_in(int dinum, slist_t *comps)
 {
   assert(dinum >= 0);
@@ -68,7 +76,7 @@ int inum_for_path_in(int dinum, const char *path)
   assert(path);
 
   // Split the path string into components and delegate to the list version of this function.
-  slist_t *comps = slist_explode(path, '/');
+  slist_t *comps = path_explode(path);
   int inum = inum_for_path_comps_in(dinum, comps);
   slist_free(comps);
 
@@ -85,7 +93,7 @@ int path_comps_pop(slist_t *comps, const char **last_comp_namep)
   while (comps)
   {
     i++;
-    
+
     // If this component is not an empty string, set the last component string pointer to this.
     if (strcmp(comps->data, ""))
     {
