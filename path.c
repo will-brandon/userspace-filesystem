@@ -105,3 +105,13 @@ int parent_inum_for_path_in(int dinum, const char *path)
   // Return the inum or error code.
   return inum;
 }
+
+void path_parent(char *path)
+{
+  assert(path);
+
+  int len = strlen(path);
+  int i;
+
+  for (i = len - 1; i >= 0 && path[i] == '/'; i--) {}
+}
