@@ -469,7 +469,12 @@ int storage_truncate(const char *path, off_t size)
 
 int storage_read(const char *path, char *buf, size_t size, off_t offset)
 {
-  return -1;
+  buf[0] = 'h';
+  buf[1] = 'i';
+  buf[2] = '\0';
+  buf[3] = EOF;
+  printf("BUF: %s\n", buf);
+  return 2;
 }
 
 int storage_write(const char *path, const char *buf, size_t size, off_t offset)
