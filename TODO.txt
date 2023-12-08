@@ -1,3 +1,0 @@
-figure out funky thing with nested dirs sometimes not deleting when empty.
-
-remove this file

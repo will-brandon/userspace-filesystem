@@ -6,8 +6,6 @@
 #include "inode.h"
 #include "directory.h"
 
-static int dirs_outstanding = 0;
-
 void directory_init(int inum)
 {
   assert(inum >= 0);
@@ -204,9 +202,6 @@ int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t back
       return -ENOSPC;
     }
 
-    dirs_outstanding++;
-    printf("\033[0;1;31m DIR GROW: %d\033[0m\n", dirs_outstanding);
-
     // Use the newly allocated entry (not zeroed out because we will set all the data anyways).
     entryp = directory_get_entry(dnodep, total_entry_count);
   }
@@ -286,8 +281,6 @@ int directory_prune(inode_t *dnodep)
     }
 
     // If the last entry is empty, shrink the directory.
-    dirs_outstanding--;
-    printf("\033[0;1;32m DIR SHRINK TO %d\033[0m\n", dirs_outstanding);
     int rv = inode_shrink(dnodep, sizeof(dirent_t));
 
     if (rv < 0)

@@ -9,8 +9,6 @@
 #include "inode.h"
 #include "util.h"
 
-static int made_blocks = 0;
-
 bool_t inode_exists(int inum)
 {
   assert(inum >= 0);
@@ -156,8 +154,6 @@ int inode_grow(inode_t *nodep, int size)
     return size;
   }
 
-  printf("Last child used: %d new size: %d (%dB)\n", last_child_used_blocks, bytes_to_blocks(last_childp->size + size), size);
-
   int rv;
 
   // If a local slot exists put the new block into it.
@@ -171,9 +167,6 @@ int inode_grow(inode_t *nodep, int size)
     {
       return bnum;
     }
-
-    made_blocks++;
-    printf("Inode asking for new block: %d\n", made_blocks);
 
     last_childp->blocks[last_child_used_blocks] = bnum;
 
