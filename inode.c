@@ -127,7 +127,6 @@ int inode_grow(inode_t *nodep, int size)
   // If no more blocks are needed simply increase the size.
   if (bytes_to_blocks(last_childp->size + size) == last_child_used_blocks)
   {
-    
     last_childp->size += size;
     return size;
   }
@@ -308,7 +307,7 @@ int inode_block_iter(inode_t *nodep, block_iter_t iter, void *buf, int offset, i
   int block_iter_size = MIN(BLOCK_SIZE - offset, remaining_size);
 
   // Call the iterator on the first block. If the return value is an error code, return the code.
-  int rv = iter(buf, block_start + offset, block_iter_size);
+  int rv = iter(buf, block_start + offset, 0, block_iter_size);
 
   if (rv < 0)
   {
@@ -328,7 +327,7 @@ int inode_block_iter(inode_t *nodep, block_iter_t iter, void *buf, int offset, i
 
     // Call the iterator (we now know the offset must be 0 every time since it is not the first
     // block). If the return value is an error code, return the code.
-    rv = iter(buf, block_start, block_iter_size);
+    rv = iter(buf, block_start, size - remaining_size, block_iter_size);
 
     if (rv < 0)
     {
@@ -349,7 +348,7 @@ typedef struct inode_fill_iter_data
   int size;
 } inode_fill_iter_data_t;
 
-int inode_fill_iter(void *buf, void *start, int size)
+int inode_fill_iter(void *buf, void *start, int offset, int size)
 {
   assert(buf);
 

@@ -1,11 +1,5 @@
-MAKE SURE TRUNCATE CLEARS TO ZERO!!!!! THIS MUST BE IMPLEMENTED IN INODE GROW!!!
-
 Remove test() in storage.c
 
 figure out funky thing with nested dirs sometimes not deleting when empty.
 
 remove this file
-
-getattr(/hello.txt) -> (0) {mode: 100644, size: 6}
-open(/hello.txt) -> 0
-read(/hello.txt, 4096 bytes, @+0) -> 6

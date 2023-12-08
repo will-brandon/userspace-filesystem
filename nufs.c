@@ -129,8 +129,8 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 {
   printf("read(%s, %ld bytes, @+%ld)\n", path, size, offset);
 
-  // Ensure the path is not null.
-  if (!path)
+  // Ensure the path and buffer are not null.
+  if (!path || !buf)
   {
     return -EINVAL;
   }
@@ -145,8 +145,8 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
 {
   printf("write(%s, %ld bytes, @+%ld)\n", path, size, offset);
 
-  // Ensure the path is not null.
-  if (!path)
+  // Ensure the path and buffer are not null.
+  if (!path || !buf)
   {
     return -EINVAL;
   }

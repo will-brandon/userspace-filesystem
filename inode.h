@@ -25,7 +25,7 @@ typedef struct inode
 } inode_t;
 
 // Define a block iterator for reading, writing, filling, etc.
-typedef int (* block_iter_t)(void *buf, void *start, int size);
+typedef int (* block_iter_t)(void *buf, void *start, int offset, int size);
 
 bool_t inode_exists(int inum);
 inode_t *inode_get(int inum);

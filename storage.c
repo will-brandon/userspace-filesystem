@@ -21,7 +21,7 @@ static inode_t *root_nodep;
 
 void test(void)
 {
-  memset(block_get(0) + RESERVED_SIZE, 0xCC, NUFS_SIZE - RESERVED_SIZE);
+  //memset(block_get(0) + RESERVED_SIZE, 0xCC, NUFS_SIZE - RESERVED_SIZE);
 
   int inum1 = inode_alloc();
   int inum2 = inode_alloc();
@@ -113,8 +113,6 @@ void storage_init(const char *host_path)
   // Initialize a pointer to the root node structure and ensure it's .. points to itself.
   root_nodep = inode_get(ROOT_INUM);
   directory_add_entry(ROOT_INUM, "..", ROOT_INUM, FALSE);
-
-  test();
 }
 
 void storage_deinit(void)
@@ -491,19 +489,100 @@ int storage_truncate(const char *path, off_t size)
   return rv < 0 ? rv : 0;
 }
 
+int storage_read_iter(void *buf, void *start, int offset, int size)
+{
+  char **strbufp = (char **) buf;
+  memcpy(*strbufp + offset, start, size);
+  return 0;
+}
+
 int storage_read(const char *path, char *buf, size_t size, off_t offset)
 {
-  buf[0] = 'h';
-  buf[1] = 'i';
-  buf[2] = '\0';
-  buf[3] = EOF;
-  printf("BUF: %s\n", buf);
-  return 2;
+  assert(path);
+  assert(buf);
+  
+  // Only start reading if the size is a reasonable number.
+  if (size < 1)
+  {
+    return 0;
+  }
+
+  // Lookup the inode at the given path.
+  int inum = storage_inum_for_path(path);
+
+  // If a lookup error occured return the error code.
+  if (inum < 0)
+  {
+    return inum;
+  }
+
+  // Get a pointer to the inode.
+  inode_t *nodep = inode_get(inum);
+
+  // If the node is a directory return an error code.
+  if (nodep->mode & INODE_DIR)
+  {
+    return -EISDIR;
+  }
+
+  // Determine the maximum number of readable bytes.
+  size = MIN(((size_t) inode_total_size(nodep) - offset), size);
+
+  // Write the blocks iteratively and return the written size.
+  inode_block_iter(nodep, &storage_read_iter, &buf, offset, size);
+  return size;
+}
+
+int storage_write_iter(void *buf, void *start, int offset, int size)
+{
+  // Copy the memory from the buffer into the block position.
+  memcpy(start, (const char *) buf, size);
+  return 0;
 }
 
 int storage_write(const char *path, const char *buf, size_t size, off_t offset)
 {
-  return -1;
+  assert(path);
+  assert(buf);
+
+  // Only start writing if the size is a reasonable number.
+  if (size < 1)
+  {
+    return 0;
+  }
+
+  // Lookup the inode at the given path.
+  int inum = storage_inum_for_path(path);
+
+  // If a lookup error occured return the error code.
+  if (inum < 0)
+  {
+    return inum;
+  }
+
+  // Get a pointer to the inode.
+  inode_t *nodep = inode_get(inum);
+
+  // If the node is a directory return an error code.
+  if (nodep->mode & INODE_DIR)
+  {
+    return -EISDIR;
+  }
+
+  // Grow the inode to fit the new bytes if needed.
+  int growth_size = MAX(0, offset + size - inode_total_size(nodep));
+  int rv = inode_grow(nodep, growth_size);
+
+  // Return any error that may have occured.
+  if (rv < 0)
+  {
+    return rv;
+  }
+
+  // Write the blocks iteratively and return the written size.
+  inode_block_iter(nodep, &storage_write_iter, (void *) buf, offset, size);
+  inode_print_blocks(nodep);
+  return size;
 }
 
 int storage_list(const char *dpath, slist_t **namesp)
