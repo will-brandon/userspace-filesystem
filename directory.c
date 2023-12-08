@@ -253,32 +253,51 @@ int directory_remove_entry(inode_t *dnodep, const char *name, bool_t back_entry_
         directory_remove_entry(entry_nodep, "..", FALSE);
       }
 
-      // If the last entry was the one removed, shrink the directory.
-      if (entry_num == total_entry_count - 1)
-      {
-        dirs_outstanding--;
-        printf("\033[0;1;32m DIR SHRINK TO %d\033[0m\n", dirs_outstanding);
-        int rv = inode_shrink(dnodep, sizeof(dirent_t));
+      // Drop the empty ending entries if there are any.
+      int rv = directory_prune(dnodep);
 
-        if (rv < 0)
-        {
-          return rv;
-        }
+      if (rv < 0)
+      {
+        return rv;
       }
 
       return 0;
     }
   }
 
-  // Drop the empty ending entries if there are any.
-  directory_prune(dnodep);
-
   return -ENOENT;
 }
 
 int directory_prune(inode_t *dnodep)
 {
+  assert(dnodep);
+  assert(dnodep->mode & INODE_DIR);
 
+  dirent_t *entryp;
+
+  for (int entry_num = directory_total_entry_count(dnodep) - 1; entry_num >= 0; entry_num--)
+  {
+    entryp = directory_get_entry(dnodep, entry_num);
+
+    // Once a non-empty entry is found we are finished pruning.
+    if (entryp->inum >= 0)
+    {
+      break;
+    }
+
+    // If the last entry is empty, shrink the directory.
+    dirs_outstanding--;
+    printf("\033[0;1;32m DIR SHRINK TO %d\033[0m\n", dirs_outstanding);
+    int rv = inode_shrink(dnodep, sizeof(dirent_t));
+
+    if (rv < 0)
+    {
+      return rv;
+    }
+  }
+
+  // Return a successful exit code.
+  return 0;
 }
 
 slist_t *directory_list(inode_t *dnodep)

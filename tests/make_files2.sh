@@ -32,38 +32,30 @@ printf "500K lenth: ${#STR_500K}\n";
 
 printf "Making and removing all the mandatory sized files 10 times for good measure\n"
 printf "===========================================================================\n"
-for epoch in {1..1}
+for epoch in {1..10}
 do
     printf "STARTING EPOCH ${epoch}\n";
 
     printf "Making 150 4K files\n";
-    for i in {1..65}
+    for i in {1..150}
     do
         echo "${STR_4K}" > "${MNT_ROOT}/${i}.txt";
     done;
     printf "Removing all 150 4K files\n";
     rm "${MNT_ROOT}"/*;
 
-done;
-
-exit;
-
     printf "Making 6 100K files.\n";
     for i in {1..6}
     do
         echo "${STR_100K}" > "${MNT_ROOT}/${i}.txt";
     done;
-    ls -la "${MNT_ROOT}";
     printf "Removing all 6 100K files\n";
     rm "${MNT_ROOT}"/*;
-    ls -la "${MNT_ROOT}";
 
     printf "Making 1 500K file\n";
     echo "${STR_500K}" > "${MNT_ROOT}/${i}.txt";
-    ls -la "${MNT_ROOT}";
     printf "Removing 1 500K file\n";
     rm "${MNT_ROOT}"/*;
-    ls -la "${MNT_ROOT}";
 
     printf "FINISHED EPOCH ${epoch}\n";
 
