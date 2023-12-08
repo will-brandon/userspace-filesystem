@@ -326,23 +326,51 @@ int storage_rename(const char *from, const char *to)
   assert(from);
   assert(to);
 
-  int rv = storage_link(from, to);
-
-  if (rv < 0)
+  // Get the inum of the inode at the "from" path.
+  int inum = storage_inum_for_path(from);
+  
+  // Ensure the inode at the "from" path exists.
+  if (inum < 0)
   {
-    return rv;
+    return -ENOENT;
   }
 
-  rv = storage_unlink(from);
-
-  if (rv < 0)
+  // Ensure the inode at the "to" path does not already exist.
+  if (storage_inum_for_path(to) >= 0)
   {
-    // If we couldn't form the link we need to unlink the new one we already made.
-    storage_unlink(to);
-    return rv;
+    return -EEXIST;
   }
 
-  return 0;
+  // Get the name of the child and the inum of the parent directories. We already ensured the "from"
+  // parent exists when we found the inode. The "to" parent may not, we must check.
+  const char *from_name, *to_name;
+  int from_parent_inum = storage_path_parent_child(from, &from_name);
+  int to_parent_inum = storage_path_parent_child(to, &to_name);
+
+  // Ensure the "to" parent was properly retrieved. If not, return the error.
+  if (to_parent_inum < 0)
+  {
+    // Be sure we still free the name strings.
+    free((void *) from_name);
+    free((void *) to_name);
+
+    return to_parent_inum;
+  }
+
+  inode_t *parent_node = inode_get(from_parent_inum);
+
+  // It should be impossile at this point for either of the parents to not be a directory.
+  assert(parent_node->mode & INODE_DIR);
+  assert(inode_get(to_parent_inum)->mode & INODE_DIR);
+
+  int rv = directory_rename_entry_by_name(parent_node, from_name, to_name);
+
+  // Free the name strings.
+  free((void *) from_name);
+  free((void *) to_name);
+
+  // If the entry failed to be renamed return its error code.
+  return rv < 0 ? rv : 0;
 }
 
 int storage_rmdir(const char *dpath)

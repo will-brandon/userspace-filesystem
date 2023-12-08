@@ -153,6 +153,28 @@ int directory_rename_entry(inode_t *dnodep, int entry_num, const char *name)
   return entry_num;
 }
 
+int directory_rename_entry_by_name(inode_t *dnodep, const char *from_name, const char *to_name)
+{
+  assert(dnodep);
+  assert(dnodep->mode & INODE_DIR);
+  assert(from_name);
+  assert(to_name);
+
+  if (strlen(from_name) >= MAX_DIR_ENTRY_NAME_LEN)
+  {
+    return -ENOENT;
+  }
+
+  int entry_num = directory_lookup_entry_num(dnodep, from_name);
+
+  if (entry_num < 0)
+  {
+    return entry_num;
+  }
+
+  return directory_rename_entry(dnodep, entry_num, to_name);
+}
+
 int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t back_entry_in_child)
 {
   assert(dinum >= 0);
