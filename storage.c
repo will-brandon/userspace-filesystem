@@ -19,82 +19,6 @@
 
 static inode_t *root_nodep;
 
-void test(void)
-{
-  //memset(block_get(0) + RESERVED_SIZE, 0xCC, NUFS_SIZE - RESERVED_SIZE);
-
-  int inum1 = inode_alloc();
-  int inum2 = inode_alloc();
-
-  inode_t *node1p = inode_get(inum1);
-  inode_t *node2p = inode_get(inum2);
-
-  inode_grow(node1p, BLOCK_SIZE / 2);
-  inode_grow(node2p, BLOCK_SIZE / 2);
-  inode_grow(node1p, BLOCK_SIZE);
-
-  inode_fill(node1p, BLOCK_SIZE - 1, 0x01, 2);
-
-  inode_print_blocks(node1p);
-  inode_print_blocks(node2p);
-
-  //inode_print_tree(node1p);
-  //inode_print_tree(node2p);
-
-  inode_free(inum1);
-  inode_free(inum2);
-
-  /*
-  #define INODES 16
-  
-  int inums[INODES];
-  inode_t *inodes[INODES];
-
-  for (size_t i = 0; i < INODES; i++)
-  {
-    inums[i] = inode_alloc();
-    inodes[i] = inode_get(inums[i]);
-    
-    if (i % 2 == 0)
-    {
-      directory_init(inums[i]);
-    }
-  }
-  
-  directory_add_entry(ROOT_INUM, "code", inums[0], TRUE);
-  directory_add_entry(ROOT_INUM, "school-stuff", inums[2], TRUE);
-  directory_add_entry(ROOT_INUM, "README.md", inums[1], TRUE);
-  
-  directory_add_entry(inums[0], "main.c", inums[1], TRUE);
-  directory_add_entry(inums[0], "util.h", inums[3], TRUE);
-  directory_add_entry(inums[0], "util.c", inums[5], TRUE);
-  directory_add_entry(inums[0], "Makefile", inums[7], TRUE);
-
-  directory_add_entry(inums[2], "CS4100", inums[4], TRUE);
-  directory_add_entry(inums[2], "DS4400", inums[6], TRUE);
-  directory_add_entry(inums[2], "resume.pdf", inums[9], TRUE);
-
-  directory_add_entry(inums[6], "hw1.pdf", inums[11], TRUE);
-  directory_add_entry(inums[6], "hw2.pdf", inums[13], TRUE);
-  directory_add_entry(inums[6], "hw3.pdf", inums[15], TRUE);
-  directory_add_entry(inums[6], "01234567890123456789012345678901234567890123456789012345678this will all be truncated", inums[8], TRUE);
-
-  
-  int new_file_count = 15;
-
-  printf("Creating %d new files in root.\n", new_file_count);
-
-  char buffer[] = "01234567890123456789012345678901234567890123456789012345678901234567890123456789";
-
-  for (int i = 0; i < new_file_count; i++)
-  {
-    int inum = alloc_inode();
-    directory_add_entry(ROOT_INUM, buffer + i, inum, TRUE);
-  }
-
-  directory_print(root_nodep, TRUE);*/
-}
-
 void storage_init(const char *host_path)
 {
   assert(host_path);
@@ -581,7 +505,6 @@ int storage_write(const char *path, const char *buf, size_t size, off_t offset)
 
   // Write the blocks iteratively and return the written size.
   inode_block_iter(nodep, &storage_write_iter, (void *) buf, offset, size);
-  inode_print_blocks(nodep);
   return size;
 }
 

@@ -212,7 +212,6 @@ int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t back
   // Put an entry for .. in the child if it is a directory and this option is requested.
   if (back_entry_in_child && inode_get(entry_inum)->mode & INODE_DIR)
   {
-    printf("Putting .. into '%s'\n", name);
     directory_add_entry(entry_inum, "..", dinum, FALSE);
   }
 
