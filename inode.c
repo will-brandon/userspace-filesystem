@@ -25,7 +25,7 @@ inode_t *inode_get(int inum)
   return block_inode_start() + (sizeof(inode_t) * inum);
 }
 
-void inode_clear(inode_t *nodep)
+void inode_reset(inode_t *nodep)
 {
   assert(nodep);
 
@@ -85,10 +85,11 @@ int inode_alloc(void)
     if (!bitmap_get(inode_bitmap, inum))
     {
       nodep = block_inode_start() + (sizeof(inode_t) * inum);
-      inode_clear(nodep);
+      inode_reset(nodep);
       bitmap_put(inode_bitmap, inum, 1);
 
       printf("inode_alloc() -> %d\n", inum);
+      inode_print_bitmap();
 
       return inum;
     }
@@ -103,10 +104,28 @@ int inode_free(int inum)
   assert(inum < MAX_INODE_COUNT);
   assert(inode_exists(inum));
 
-  printf("inode_free(%d)\n", inum);
+  // Clear all content from the node before freeing it.
+  int rv = inode_clear(inode_get(inum));
+
+  // Return any error that may have developed.
+  if (rv < 0)
+  {
+    return rv;
+  }
 
   // Set the inode to unused.
   bitmap_put(block_inode_bitmap_start(), inum, 0);
+
+  printf("inode_free(%d)\n", inum);
+  inode_print_bitmap();
+}
+
+int inode_clear(inode_t *nodep)
+{
+  // Shrinl to a size of 0.
+  int rv = inode_shrink(nodep, nodep->size);
+  assert(nodep->size == 0);
+  return rv;
 }
 
 int inode_grow(inode_t *nodep, int size)
@@ -432,4 +451,10 @@ void inode_print_blocks_label_offset(inode_t *nodep, int label_offset)
 void inode_print_blocks(inode_t *nodep)
 {
   inode_print_blocks_label_offset(nodep, 0);
+}
+
+void inode_print_bitmap(void)
+{
+  // Display the allocation bitmap.
+  bitmap_print(block_inode_bitmap_start(), MAX_INODE_COUNT);
 }

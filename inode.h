@@ -35,6 +35,7 @@ inode_t *inode_last_child(inode_t *nodep);
 inode_t *inode_second_to_last_child(inode_t *nodep);
 int inode_alloc(void);
 int inode_free(int inum);
+int inode_clear(inode_t *nodep);
 int inode_grow(inode_t *nodep, int size);
 int inode_grow_zero(inode_t *nodep, int size);
 int inode_shrink(inode_t *nodep, int size);
@@ -45,5 +46,6 @@ int inode_fill(inode_t *nodep, int offset, byte_t fill, int size);
 void inode_print(inode_t *nodep);
 void inode_print_tree(inode_t *nodep);
 void inode_print_blocks(inode_t *nodep);
+void inode_print_bitmap(void);
 
 #endif

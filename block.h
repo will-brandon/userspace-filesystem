@@ -82,4 +82,6 @@ void block_free(int bnum);
 
 void block_print(int bnum);
 
+void block_print_bitmap(void);
+
 #endif

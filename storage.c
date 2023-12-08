@@ -382,7 +382,12 @@ int storage_rmdir(const char *dpath)
 int storage_truncate(const char *path, off_t size)
 {
   assert(path);
-  assert(size >= 0);
+
+  // If the given size is negative simply return 0.
+  if (size < 0)
+  {
+    return 0;
+  }
 
   // Lookup the inode inum at the given path.
   int inum = storage_inum_for_path(path);
@@ -396,7 +401,7 @@ int storage_truncate(const char *path, off_t size)
   // Get a pointer to the inode and determine its current size.
   inode_t *nodep = inode_get(inum);
   int size_delta = size - inode_total_size(nodep);
-  int rv;
+  int rv = 0;
 
   // Grow the inode if the delta > 0.
   if (size_delta > 0)
@@ -409,8 +414,8 @@ int storage_truncate(const char *path, off_t size)
     rv = inode_shrink(nodep, -size_delta);
   }
 
-  // If an error occured return the error code. Otherise return 0 indicating success.
-  return rv < 0 ? rv : 0;
+  // Return either 0 or an error if one arose.
+  return rv;
 }
 
 int storage_read_iter(void *buf, void *start, int offset, int size)

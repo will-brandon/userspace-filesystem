@@ -42,7 +42,6 @@ void bitmap_put(void *bm, int i, int v)
 // Pretty-print the bitmap (with the given no. of bits).
 void bitmap_print(void *bm, int size)
 {
-
   for (int i = 0; i < size; i++)
   {
     putchar(bitmap_get(bm, i) ? '1' : '0');
@@ -56,4 +55,6 @@ void bitmap_print(void *bm, int size)
       putchar(' ');
     }
   }
+
+  printf("\n");
 }

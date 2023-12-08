@@ -113,8 +113,8 @@ int nufs_truncate(const char *path, off_t size)
 {
   printf("truncate(%s, %ld bytes)\n", path, size);
 
-  // Ensure the path is not null and size is at lest 0.
-  if (!path || size < 0)
+  // Ensure the path is not null.
+  if (!path)
   {
     return -EINVAL;
   }

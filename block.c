@@ -112,11 +112,14 @@ int block_alloc(void)
 {
   void *bbm = block_block_bitmap_start();
 
-  for (int ii = RESERVED_BLOCKS; ii < BLOCK_COUNT; ++ii) {
-    if (!bitmap_get(bbm, ii)) {
+  for (int ii = RESERVED_BLOCKS; ii < BLOCK_COUNT; ++ii)
+  {
+    if (!bitmap_get(bbm, ii))
+    {
       bitmap_put(bbm, ii, 1);
 
       printf("block_alloc() -> %d\n", ii);
+      block_print_bitmap();
 
       return ii;
     }
@@ -128,9 +131,10 @@ int block_alloc(void)
 // Deallocate the block with the given index.
 void block_free(int bnum)
 {
-  printf("block_free(%d)\n", bnum);
   void *bbm = block_block_bitmap_start();
   bitmap_put(bbm, bnum, 0);
+  printf("block_free(%d)\n", bnum);
+  block_print_bitmap();
 }
 
 void block_print(int bnum)
@@ -167,4 +171,10 @@ void block_print(int bnum)
 
     bytep++;
   }
+}
+
+void block_print_bitmap(void)
+{
+  // Display the allocation bitmap.
+  bitmap_print(block_block_bitmap_start(), BLOCK_COUNT);
 }
