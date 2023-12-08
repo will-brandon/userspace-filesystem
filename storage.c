@@ -296,7 +296,7 @@ int storage_unlink(const char *path)
 
   // Remove the directory entry. Hard links arent allowed for directories so we don't have to worry
   // about removing the .. (the last FALSE argument doesn't matter).
-  int rv = directory_delete(parent_node, name, TRUE);
+  int rv = directory_remove_entry(parent_node, name, TRUE);
   free((void *) name);
 
   // Return any errors that may have occured attempting to remove the directory entry.

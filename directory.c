@@ -49,14 +49,15 @@ bool_t directory_is_empty(inode_t *dnodep)
   assert(dnodep);
   assert(dnodep->mode & INODE_DIR);
 
-  const char *name;
+  dirent_t *entryp;
 
   // Search for anything that is not either . or .. in the directory.
   for (int entry_num = 0; entry_num < directory_total_entry_count(dnodep); entry_num++)
   {
-    name = directory_get_entry(dnodep, entry_num)->name;
+    entryp = directory_get_entry(dnodep, entry_num);
 
-    if (strcmp(name, ".") && strcmp(name, ".."))
+    // Check for an entry that is filled and where the name isn't either of the reserved links.
+    if (entryp->inum >= 0 && strcmp(entryp->name, ".") && strcmp(entryp->name, ".."))
     {
       return FALSE;
     }
@@ -219,7 +220,7 @@ int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t back
   return entry_num;
 }
 
-int directory_delete(inode_t *dnodep, const char *name, bool_t back_entry_in_child)
+int directory_remove_entry(inode_t *dnodep, const char *name, bool_t back_entry_in_child)
 {
   assert(dnodep);
   assert(dnodep->mode & INODE_DIR);
@@ -244,7 +245,7 @@ int directory_delete(inode_t *dnodep, const char *name, bool_t back_entry_in_chi
       // Remove the entry for .. in the child if it is a directory and this option is requested.
       if (back_entry_in_child && entry_nodep->mode & INODE_DIR)
       {
-        directory_delete(entry_nodep, "..", FALSE);
+        directory_remove_entry(entry_nodep, "..", FALSE);
       }
 
       // If the last entry was the one removed, shrink the directory.

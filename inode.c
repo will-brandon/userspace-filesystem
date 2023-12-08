@@ -88,6 +88,8 @@ int inode_alloc(void)
       inode_clear(nodep);
       bitmap_put(inode_bitmap, inum, 1);
 
+      printf("inode_alloc() -> %d\n", inum);
+
       return inum;
     }
   }
@@ -100,6 +102,8 @@ int inode_free(int inum)
 {
   assert(inum < MAX_INODE_COUNT);
   assert(inode_exists(inum));
+
+  printf("inode_free(%d)\n", inum);
 
   // Set the inode to unused.
   bitmap_put(block_inode_bitmap_start(), inum, 0);

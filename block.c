@@ -115,6 +115,9 @@ int block_alloc(void)
   for (int ii = RESERVED_BLOCKS; ii < BLOCK_COUNT; ++ii) {
     if (!bitmap_get(bbm, ii)) {
       bitmap_put(bbm, ii, 1);
+
+      printf("block_alloc() -> %d\n", ii);
+
       return ii;
     }
   }
@@ -125,6 +128,7 @@ int block_alloc(void)
 // Deallocate the block with the given index.
 void block_free(int bnum)
 {
+  printf("block_free(%d)\n", bnum);
   void *bbm = block_block_bitmap_start();
   bitmap_put(bbm, bnum, 0);
 }

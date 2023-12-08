@@ -1,11 +1,29 @@
 #!/bin/bash
 
+
 MNT_ROOT="/home/wbrandon/cs3650/cs3650-project2/mnt"
-DIR="${MNT_ROOT}/hello/123/456/789"
+DIR1="${MNT_ROOT}/hello"
+DIR2="${DIR1}/world"
+DIR3="${DIR2}/123"
 
-mkdir -p "${DIR}"
+mkdir -p "${DIR3}"
 
-for i in {1..1000}
+for j in {1..100}
 do
-    touch "${DIR}/${i}.txt"
+    STRING=""
+
+    for k in {1..100}
+    do
+        STRING="${STRING}Data Line ${k}.\n"
+    done
+
+    echo ${STRING} > "${DIR3}/${j}.txt"
 done
+
+
+for j in {1..100}
+do
+    rm "${DIR3}/${j}.txt"
+done
+
+rmdir ${DIR3} ${DIR2} ${DIR1}
