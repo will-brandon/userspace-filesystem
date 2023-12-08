@@ -125,6 +125,8 @@ int block_alloc(void)
     }
   }
 
+  block_print_bitmap();
+
   return -ENOSPC;
 }
 

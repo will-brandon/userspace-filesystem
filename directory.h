@@ -31,6 +31,7 @@ int directory_lookup_inum(inode_t *dnodep, const char *name);
 int directory_rename_entry(inode_t *dnodep, int entry_num, const char *name);
 int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t back_entry_in_child);
 int directory_remove_entry(inode_t *dnodep, const char *name, bool_t back_entry_in_child);
+int directory_prune(inode_t *dnodep);
 slist_t *directory_list(inode_t *dnodep);
 void directory_print_entries(inode_t *dnodep, bool_t include_empty_entries);
 void directory_print_tree(inode_t *dnodep);

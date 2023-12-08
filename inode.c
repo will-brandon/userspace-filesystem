@@ -9,6 +9,8 @@
 #include "inode.h"
 #include "util.h"
 
+static int made_blocks = 0;
+
 bool_t inode_exists(int inum)
 {
   assert(inum >= 0);
@@ -123,7 +125,7 @@ int inode_free(int inum)
 int inode_clear(inode_t *nodep)
 {
   // Shrinl to a size of 0.
-  int rv = inode_shrink(nodep, nodep->size);
+  int rv = inode_shrink(nodep, inode_total_size(nodep));
   assert(nodep->size == 0);
   return rv;
 }
@@ -154,25 +156,37 @@ int inode_grow(inode_t *nodep, int size)
     return size;
   }
 
+  printf("Last child used: %d new size: %d (%dB)\n", last_child_used_blocks, bytes_to_blocks(last_childp->size + size), size);
+
+  int rv;
+
   // If a local slot exists put the new block into it.
   if (last_child_used_blocks < INODE_LOCAL_BLOCK_CAP)
   {
-    // Allocate the new block and ensure there is enough storage.
-    if ((bnum = block_alloc()) < 0)
+    // Allocate the new block.
+    bnum = block_alloc();
+
+    // Ensure no errors were thrown.
+    if (bnum < 0)
     {
-      return -ENOSPC;
+      return bnum;
     }
+
+    made_blocks++;
+    printf("Inode asking for new block: %d\n", made_blocks);
 
     last_childp->blocks[last_child_used_blocks] = bnum;
 
     // Grow the last child's size by whatever this increment was.
     last_childp->size += MIN(BLOCK_SIZE, size);
 
-    // Recursively grow the inode starting at the last child as a performance shortcut. If the
-    // size is not greater than the size of a block nothing will happen.
-    if (inode_grow(last_childp, size - BLOCK_SIZE) < 0)
+    // Recursively grow the inode starting at the last child as a performance shortcut.
+    rv = inode_grow(last_childp, size - BLOCK_SIZE);
+
+    // Ensure no errors were thrown.
+    if (rv < 0)
     {
-      return -ENOSPC;
+      return rv;
     }
 
     // Return the size we successfully incremented by.
@@ -185,15 +199,24 @@ int inode_grow(inode_t *nodep, int size)
   last_childp->size = INODE_MAX_LOCAL_SIZE;
 
   // Since we know we are operating in the last child, we must create a new child.
-  if ((last_childp->next = inode_alloc()) < 0)
+  int new_inum = inode_alloc();
+
+  // Ensure no errors were thrown.
+  if (new_inum < 0)
   {
-    return -ENOSPC;
+    return new_inum;
   }
 
+  // Since there were no errors, add the new inum to the linked list.
+  last_childp->next = new_inum;
+
   // Recursively perform the growth in this child inode with the remaining size.
-  if (inode_grow(inode_get(last_childp->next), remaining_size_change) < 0)
+  rv = inode_grow(inode_get(last_childp->next), remaining_size_change);
+
+  // Ensure no errors were thrown.
+  if (rv < 0)
   {
-    return -ENOSPC;
+    return rv;
   }
 
   // Return the size.

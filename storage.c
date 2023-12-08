@@ -505,6 +505,7 @@ int storage_write(const char *path, const char *buf, size_t size, off_t offset)
   // Return any error that may have occured.
   if (rv < 0)
   {
+    printf("ERR 1\n");
     return rv;
   }
 
