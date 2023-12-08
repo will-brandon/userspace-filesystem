@@ -29,7 +29,6 @@ dirent_t *directory_get_entry(inode_t *dnodep, int entry_num);
 int directory_lookup_entry_num(inode_t *dnodep, const char *name);
 int directory_lookup_inum(inode_t *dnodep, const char *name);
 int directory_rename_entry(inode_t *dnodep, int entry_num, const char *name);
-int directory_rename_entry_by_name(inode_t *dnodep, const char *from_name, const char *to_name);
 int directory_add_entry(int dinum, const char *name, int entry_inum, bool_t back_entry_in_child);
 int directory_remove_entry(inode_t *dnodep, const char *name, bool_t back_entry_in_child);
 int directory_prune(inode_t *dnodep);
